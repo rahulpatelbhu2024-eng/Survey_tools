@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chain Survey — Field Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Fraunces:ital,wght@0,300;0,600;1,300;1,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f4ee; --surface:#ffffff; --surface2:#f0ece1; --surface3:#e8e3d8;
+  --border:#ddd8cc; --border2:#ccc7bb;
+  --text:#1c1a16; --muted:#7a7468; --faint:#aaa89e;
+  --green:#2d5a3d; --green-bg:#e8f0ea; --green-mid:#5a9a6a;
+  --red:#8b3a2a;   --red-bg:#f5ebe8;   --red-mid:#c06040;
+  --amber:#8a5f1a; --amber-bg:#faf3e0;
+  --blue:#1a4a7a;  --blue-bg:#e8f0fa;
+  --mono:'DM Mono',monospace; --serif:'Fraunces',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh;}
+
+/* ── HEADER ── */
+header{background:var(--text);color:var(--bg);padding:24px 40px 20px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+header h1{font-family:var(--serif);font-weight:300;font-size:26px;letter-spacing:-0.3px;line-height:1.1;}
+header h1 em{font-style:italic;color:#a8c4ae;}
+.header-meta{font-size:10px;color:#888;letter-spacing:0.05em;}
+
+/* ── TABS ── */
+.tabbar{display:flex;background:var(--text);border-top:1px solid #2a2a28;padding:0 40px;overflow-x:auto;}
+.tabbar button{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 18px;background:none;border:none;color:#666;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.tabbar button.active{color:#a8c4ae;border-bottom-color:#a8c4ae;}
+.tabbar button:hover:not(.active){color:#bbb;}
+
+/* ── LAYOUT ── */
+main{max-width:1000px;margin:0 auto;padding:28px 20px 60px;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:20px;overflow:hidden;}
+.card-head{padding:13px 18px 11px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.card-head h2{font-family:var(--serif);font-weight:600;font-size:15px;}
+.card-head h2 em{font-style:italic;font-weight:300;}
+.card-head .sub{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);}
+.card-body{padding:16px 18px;}
+
+/* ── FORMULA BOX ── */
+.formula{background:var(--surface2);border-left:3px solid var(--green);padding:9px 12px;font-size:11.5px;color:var(--muted);line-height:1.9;margin-bottom:14px;border-radius:0 2px 2px 0;}
+
+/* ── FIELD NOTEBOOK TABLE ── */
+.nb-wrap{overflow-x:auto;}
+table.nb{width:100%;border-collapse:collapse;font-size:12px;}
+table.nb th{background:var(--text);color:var(--bg);font-weight:500;padding:8px 10px;text-align:center;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;}
+table.nb th.left-h{background:#1a3d28;}
+table.nb th.right-h{background:#4a1a12;}
+table.nb th.base-h{background:#2a2820;}
+table.nb td{padding:5px 6px;border:1px solid var(--border);text-align:center;vertical-align:middle;}
+table.nb td.ch-cell{background:var(--surface2);font-weight:500;font-size:12px;}
+table.nb td.note-cell{background:#fafaf7;font-size:11px;color:var(--muted);text-align:left;}
+table.nb input{width:80px;padding:4px 6px;border:1px solid var(--border2);border-radius:2px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;}
+table.nb input.inp-ch{width:82px;background:var(--surface2);}
+table.nb input.inp-left{border-color:#2d5a3d66;background:#f0f7f2;}
+table.nb input.inp-right{border-color:#8b3a2a66;background:#fdf2f0;}
+table.nb input.inp-note{width:110px;text-align:left;}
+table.nb input:focus{outline:none;border-color:var(--green);}
+table.nb .del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0 4px;border-radius:2px;}
+table.nb .del-btn:hover{background:var(--red-bg);}
+table.nb tr:hover td{background:#fafaf5;}
+table.nb tr:hover td.ch-cell{background:#e8e4d8;}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:0.04em;padding:7px 16px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);color:var(--text);cursor:pointer;transition:background .15s;}
+.btn:hover{background:var(--surface2);}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green);}
+.btn.primary:hover{background:#245030;}
+.btn.danger{background:var(--red-bg);color:var(--red);border-color:var(--red);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;}
+
+/* ── UNIT SELECTOR ── */
+.unit-bar{display:flex;gap:0;border:1px solid var(--border2);border-radius:3px;overflow:hidden;width:fit-content;margin-bottom:14px;}
+.unit-bar button{font-family:var(--mono);font-size:11px;padding:5px 14px;border:none;background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+.unit-bar button.active{background:var(--text);color:var(--bg);}
+
+/* ── RESULTS GRID ── */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:14px;}
+.res-card{background:var(--surface2);border-radius:3px;padding:10px 12px;}
+.res-label{font-size:10px;color:var(--muted);letter-spacing:0.04em;margin-bottom:5px;}
+.res-val{font-family:var(--serif);font-weight:300;font-size:22px;color:var(--text);line-height:1.1;}
+.res-unit{font-size:10px;font-family:var(--mono);color:var(--muted);margin-left:3px;}
+
+/* ── BADGE ── */
+.badge{display:inline-block;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-left:6px;vertical-align:middle;}
+.b-green{background:var(--green-bg);color:var(--green);}
+.b-amber{background:var(--amber-bg);color:var(--amber);}
+.b-red{background:var(--red-bg);color:var(--red);}
+
+/* ── CANVAS ── */
+canvas{width:100%;display:block;border-radius:3px;background:var(--surface2);}
+.view-toggle{display:flex;gap:0;border:1px solid var(--border2);border-radius:3px;overflow:hidden;width:fit-content;}
+.view-toggle button{font-family:var(--mono);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;padding:5px 14px;border:none;background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+.view-toggle button.active{background:var(--text);color:var(--bg);}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:8px;}
+.legend span{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:10px;height:10px;border-radius:1px;display:inline-block;}
+
+/* ── TWO-COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:640px){.two-col{grid-template-columns:1fr;} header{padding:18px 16px;} .tabbar{padding:0 12px;} main{padding:16px 12px 40px;}}
+
+/* ── INFO BOX ── */
+.info-box{background:var(--blue-bg);border-left:3px solid var(--blue);padding:10px 14px;font-size:11.5px;color:#1a3a6a;line-height:1.8;border-radius:0 2px 2px 0;margin-bottom:14px;}
+.info-box strong{font-weight:500;}
+
+/* ── FIELD-ROW ── */
+.field-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.field-row label{font-size:11px;color:var(--muted);min-width:150px;line-height:1.4;}
+.field-row input,.field-row select{width:82px;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;}
+.field-row input:focus{outline:none;border-color:var(--green);}
+.unit-lbl{font-size:10px;color:var(--muted);}
+
+/* ── ERRORS TABLE ── */
+table.err-table{width:100%;border-collapse:collapse;font-size:12px;}
+table.err-table th{background:var(--surface2);color:var(--muted);padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--border);}
+table.err-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6;}
+table.err-table tr:last-child td{border-bottom:none;}
+table.err-table .err-num{font-weight:500;color:var(--red);width:28px;}
+table.err-table .err-type{font-size:10px;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);width:80px;}
+
+footer{text-align:center;padding:18px;font-size:10px;color:var(--muted);letter-spacing:0.05em;border-top:1px solid var(--border);margin-top:20px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Chain <em>Survey</em> — Field Tool</h1>
+    <p style="margin-top:5px;font-size:10px;color:#9a9488;letter-spacing:.04em;">Field notebook · Polygon plot · Area · Corrections · Errors</p>
+  </div>
+  <div class="header-meta" style="text-align:right;">BHU Campus Survey<br>21 / 01 / 2026</div>
+</header>
+
+<div class="tabbar">
+  <button class="active" onclick="switchTab('notebook',this)">① Field Notebook</button>
+  <button onclick="switchTab('plot',this)">② Survey Plot</button>
+  <button onclick="switchTab('area',this)">③ Area Calc</button>
+  <button onclick="switchTab('corrections',this)">④ Chain Corrections</button>
+  <button onclick="switchTab('errors',this)">⑤ Errors</button>
+  <button onclick="switchTab('outputmap',this)">⑥ Output Map</button>
+</div>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 1 — FIELD NOTEBOOK
+═══════════════════════════════════════════════════ -->
+<div id="panel-notebook" class="panel active">
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Field <em>Note Book</em></h2>
+      <span class="sub">Left offset | Chainage | Right offset — reading bottom → top</span>
+    </div>
+    <div class="card-body">
+
+      <div class="info-box">
+        <strong>How to use:</strong> Enter data exactly as recorded in your field book — chainage increases upward (Station A = 0 at bottom, Station B at top). At each chainage where the boundary falls, enter the perpendicular offset distance on the left <em>or</em> right side (or both if boundary falls on both sides at that station). Leave 0 if no offset on that side.
+      </div>
+
+      <!-- Unit selector -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);">Unit:</span>
+        <div class="unit-bar">
+          <button id="ubtn-ft" class="active" onclick="setUnit('ft',this)">Feet</button>
+          <button id="ubtn-m" onclick="setUnit('m',this)">Metres</button>
+        </div>
+        <span style="font-size:11px;color:var(--muted);">Station labels:</span>
+        <input type="text" id="stn-a" value="Station A (0)" style="width:120px;padding:4px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:11px;" oninput="renderNotebook()">
+        <input type="text" id="stn-b" value="Station B" style="width:100px;padding:4px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:11px;" oninput="renderNotebook()">
+      </div>
+
+      <div class="nb-wrap">
+        <table class="nb" id="nb-table">
+          <thead>
+            <tr>
+              <th class="left-h" style="width:90px;">Left Offset</th>
+              <th class="base-h" style="width:130px;">Base Line<br><span style="font-weight:400;font-size:9px;" id="stn-b-head">Station B</span></th>
+              <th class="right-h" style="width:90px;">Right Offset</th>
+              <th class="base-h" style="width:110px;font-size:9px;">Note / Feature</th>
+              <th class="base-h" style="width:28px;"></th>
+            </tr>
+          </thead>
+          <tbody id="nb-body"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" style="background:var(--surface2);padding:8px 10px;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.04em;">
+                ↑ Field Note Book — entries read bottom to top &nbsp;|&nbsp; Survey Plotting →
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="addRow()">+ Add row</button>
+        <button class="btn" onclick="loadBHU()">Load BHU data (21/1/2026)</button>
+        <button class="btn" onclick="loadExample()">Load textbook example</button>
+        <button class="btn danger" onclick="clearAll()">Clear all</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 2 — SURVEY PLOT
+═══════════════════════════════════════════════════ -->
+<div id="panel-plot" class="panel">
+  <div class="card">
+    <div class="card-head">
+      <h2>Survey <em>Plot</em></h2>
+      <span class="sub">Field polygon from offset tips</span>
+    </div>
+    <div class="card-body">
+
+      <div class="formula">
+        The tips of all left offsets are joined in sequence (bottom→top) to form the left boundary.<br>
+        The tips of all right offsets are joined in sequence (bottom→top) to form the right boundary.<br>
+        The two ends of the baseline close the polygon at top and bottom.
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div class="view-toggle">
+          <button id="vbtn-survey" class="active" onclick="setView('survey',this)">Survey view</button>
+          <button id="vbtn-map" onclick="setView('map',this)">Clean map</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);">
+          Scale 1cm =
+          <input type="number" id="plot-scale" value="10" min="1" step="1" style="width:60px;padding:4px 6px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;" oninput="drawPlot()">
+          <span id="plot-unit-lbl">ft</span>
+        </div>
+      </div>
+
+      <canvas id="plot-canvas" height="580"></canvas>
+
+      <div class="legend">
+        <span><span class="leg-dot" style="background:#2d5a3d;"></span>Left boundary</span>
+        <span><span class="leg-dot" style="background:#8b3a2a;"></span>Right boundary</span>
+        <span><span class="leg-dot" style="background:#1c1a16;border:1px dashed #888;"></span>Baseline</span>
+        <span><span class="leg-dot" style="background:#b07d2a;"></span>Offset lines (survey view)</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 3 — AREA CALCULATION
+═══════════════════════════════════════════════════ -->
+<div id="panel-area" class="panel">
+  <div class="card">
+    <div class="card-head"><h2>Area <em>Calculation</em></h2><span class="sub">Shoelace + Trapezoid methods</span></div>
+    <div class="card-body">
+      <div class="formula">
+        <strong>Shoelace (Gauss) formula</strong> — exact area of closed polygon:<br>
+        A = ½ |Σ(xᵢ·yᵢ₊₁ − xᵢ₊₁·yᵢ)|<br><br>
+        <strong>Trapezoidal rule</strong> — area between baseline and offset line:<br>
+        A = Σ [(O_i + O_{i+1})/2 × (ch_{i+1} − ch_i)]
+      </div>
+      <div class="res-grid" id="area-results"></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><h2>Left side <em>detail</em></h2></div>
+      <div class="card-body">
+        <table class="err-table" id="left-area-table">
+          <thead><tr><th>Chainage</th><th>Left offset</th><th>Avg offset</th><th>Interval</th><th>Area strip</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Right side <em>detail</em></h2></div>
+      <div class="card-body">
+        <table class="err-table" id="right-area-table">
+          <thead><tr><th>Chainage</th><th>Right offset</th><th>Avg offset</th><th>Interval</th><th>Area strip</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 4 — CHAIN CORRECTIONS
+═══════════════════════════════════════════════════ -->
+<div id="panel-corrections" class="panel">
+
+  <div class="two-col">
+
+    <div class="card">
+      <div class="card-head"><h2>Incorrect chain <em>length</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          True distance = Measured × (Actual chain length / Nominal length)<br>
+          True area = Measured area × (L_actual / L_nominal)²
+        </div>
+        <div class="field-row"><label>Nominal chain length</label><input type="number" id="cl-nom" value="20" step="0.01" oninput="calcChainLen()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Actual (worn) length</label><input type="number" id="cl-act" value="20.05" step="0.01" oninput="calcChainLen()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Measured distance</label><input type="number" id="cl-dist" value="250" step="0.1" oninput="calcChainLen()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Measured area</label><input type="number" id="cl-area" value="5000" step="1" oninput="calcChainLen()"><span class="unit-lbl">m²</span></div>
+        <div class="res-grid" id="chainlen-results"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Sag <em>correction</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          C_sag = −w²L³ / (24T²)<br>
+          w = weight per unit length, T = tension, L = span
+        </div>
+        <div class="field-row"><label>Span length (L)</label><input type="number" id="sag-L" value="20" step="0.1" oninput="calcSag()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Weight per metre (w)</label><input type="number" id="sag-w" value="0.11" step="0.01" oninput="calcSag()"><span class="unit-lbl">kg/m</span></div>
+        <div class="field-row"><label>Applied tension (T)</label><input type="number" id="sag-T" value="8" step="0.5" oninput="calcSag()"><span class="unit-lbl">kg</span></div>
+        <div class="res-grid" id="sag-results"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Temperature <em>correction</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          C_temp = α × (T_field − T_std) × L<br>
+          α = coefficient of thermal expansion (steel ≈ 11.2×10⁻⁶ /°C)
+        </div>
+        <div class="field-row"><label>Standard temp (T_std)</label><input type="number" id="tmp-std" value="20" step="1" oninput="calcTemp()"><span class="unit-lbl">°C</span></div>
+        <div class="field-row"><label>Field temp (T_field)</label><input type="number" id="tmp-fld" value="35" step="1" oninput="calcTemp()"><span class="unit-lbl">°C</span></div>
+        <div class="field-row"><label>Measured length (L)</label><input type="number" id="tmp-L" value="200" step="1" oninput="calcTemp()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>α (×10⁻⁶ /°C)</label><input type="number" id="tmp-alpha" value="11.2" step="0.1" oninput="calcTemp()"></div>
+        <div class="res-grid" id="temp-results"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Slope <em>correction</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          C_slope = −h² / (2L) &nbsp;&nbsp;(approximate)<br>
+          True horizontal = √(L² − h²) &nbsp;&nbsp;(exact)<br>
+          h = difference in elevation, L = slope distance
+        </div>
+        <div class="field-row"><label>Slope distance (L)</label><input type="number" id="slp-L" value="100" step="0.1" oninput="calcSlope()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Height difference (h)</label><input type="number" id="slp-h" value="3.5" step="0.1" oninput="calcSlope()"><span class="unit-lbl">m</span></div>
+        <div class="res-grid" id="slope-results"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Oblique offset <em>correction</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          True offset (⊥) = Measured × cos θ<br>
+          Chainage correction = Measured × sin θ
+        </div>
+        <div class="field-row"><label>Measured oblique offset</label><input type="number" id="ob-off" value="8.5" step="0.1" oninput="calcOblique()"><span class="unit-lbl">ft</span></div>
+        <div class="field-row"><label>Angle θ with chain line</label><input type="number" id="ob-ang" value="30" step="1" oninput="calcOblique()"><span class="unit-lbl">°</span></div>
+        <div class="res-grid" id="oblique-results"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Closing error <em>&amp; accuracy</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          e = √(ΣL² + ΣD²)<br>
+          Accuracy ratio = Total length / e
+        </div>
+        <div class="field-row"><label>Error in latitude (ΣL)</label><input type="number" id="ce-el" value="0.35" step="0.01" oninput="calcClose()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Error in departure (ΣD)</label><input type="number" id="ce-ed" value="0.28" step="0.01" oninput="calcClose()"><span class="unit-lbl">m</span></div>
+        <div class="field-row"><label>Total traverse length</label><input type="number" id="ce-tot" value="480" step="1" oninput="calcClose()"><span class="unit-lbl">m</span></div>
+        <div class="res-grid" id="close-results"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 5 — ERRORS
+═══════════════════════════════════════════════════ -->
+<div id="panel-errors" class="panel">
+  <div class="card">
+    <div class="card-head"><h2>Errors in <em>Ordinary Chaining</em></h2><span class="sub">All 17 sources — from your syllabus</span></div>
+    <div class="card-body">
+      <table class="err-table">
+        <thead><tr><th>#</th><th>Type</th><th>Error / Cause</th><th>Effect &amp; Remedy</th></tr></thead>
+        <tbody id="errors-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 6 — OUTPUT MAP
+═══════════════════════════════════════════════════ -->
+<div id="panel-outputmap" class="panel">
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Output <em>Survey Map</em></h2>
+      <span class="sub">Publication-quality downloadable field map</span>
+    </div>
+    <div class="card-body">
+
+      <div class="info-box">
+        <strong>Map settings:</strong> Customise the map details below, then click <em>Generate Map</em>. The map is drawn as a scaled SVG — download as <strong>SVG</strong> (vector, print-ready) or <strong>PNG</strong> (raster, for reports).
+      </div>
+
+      <!-- Map settings row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 20px;margin-bottom:16px;">
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Survey title</label>
+          <input type="text" id="om-title" value="BHU Campus — Chain Survey" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Surveyor name</label>
+          <input type="text" id="om-surveyor" value="Rahul Patel" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Date</label>
+          <input type="text" id="om-date" value="21 / 01 / 2026" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Department / Institute</label>
+          <input type="text" id="om-dept" value="Dept. of Civil Engineering, BHU" style="width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Scale (1 unit = ? px)</label>
+          <input type="number" id="om-scale" value="4" min="1" max="20" step="0.5" style="width:80px;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Show grid</label>
+          <select id="om-grid" style="width:100px;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Offset labels</label>
+          <select id="om-labels" style="width:100px;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="field-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+          <label style="min-width:unset;">Notes on map</label>
+          <select id="om-notes" style="width:100px;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="generateOutputMap()">⬛ Generate Map</button>
+        <button class="btn" id="om-dl-svg" style="display:none;" onclick="downloadSVG()">↓ Download SVG</button>
+        <button class="btn" id="om-dl-png" style="display:none;" onclick="downloadPNG()">↓ Download PNG</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="card" id="om-preview-card" style="display:none;">
+    <div class="card-head">
+      <h2>Map <em>Preview</em></h2>
+      <span class="sub" id="om-preview-meta"></span>
+    </div>
+    <div class="card-body" style="padding:8px;overflow-x:auto;background:#f0ece1;">
+      <div id="om-svg-container" style="min-width:400px;"></div>
+    </div>
+  </div>
+
+  <!-- Summary table below map -->
+  <div class="card" id="om-summary-card" style="display:none;">
+    <div class="card-head"><h2>Survey <em>Summary Table</em></h2><span class="sub">Included on the printed map</span></div>
+    <div class="card-body">
+      <div id="om-summary-content"></div>
+    </div>
+  </div>
+
+</div>
+
+</main>
+<footer>Chain Survey Field Tool · BHU Civil Engineering · Based on VS25 syllabus</footer>
+
+<script>
+// ════════════════════════════════
+// DATA
+// ════════════════════════════════
+let rows = [];
+let currentUnit = 'ft';
+let currentView = 'survey';
+
+// BHU field data from notebook 21/1/2026 (unit = feet)
+function getBHU(){
+  return [
+    {ch:0,    L:0,    R:13.6,  note:'Start'},
+    {ch:7.6,  L:0,    R:12.6,  note:'Fencing'},
+    {ch:15.8, L:0,    R:44.15, note:'Fencing'},
+    {ch:19,   L:0,    R:37.2,  note:'Fencing'},
+    {ch:28.5, L:0,    R:47.9,  note:''},
+    {ch:35.9, L:38.9, R:0,     note:'Fencing'},
+    {ch:40,   L:0,    R:49.3,  note:''},
+    {ch:51.9, L:51,   R:49.25, note:''},
+    {ch:68,   L:0,    R:49.5,  note:''},
+    {ch:83,   L:0,    R:49.5,  note:''},
+    {ch:94.2, L:0,    R:48.25, note:''},
+    {ch:101.3,L:0,    R:42.2,  note:''},
+    {ch:103,  L:42.2, R:42.2,  note:'Left boundary'},
+    {ch:116,  L:0,    R:28.2,  note:''},
+    {ch:130,  L:0,    R:0,     note:'Curve'},
+    {ch:138,  L:43.1, R:0,     note:''},
+    {ch:144,  L:0,    R:11.7,  note:''},
+    {ch:150,  L:44,   R:11.7,  note:'Gate'},
+  ].sort((a,b)=>a.ch-b.ch);
+}
+
+// Textbook example from PDF page 5
+function getExample(){
+  return [
+    {ch:0,   L:5,  R:5,  note:'Station A (Start)'},
+    {ch:10,  L:15, R:21, note:''},
+    {ch:40,  L:10, R:20, note:''},
+    {ch:50,  L:13, R:16, note:'End of Chain 1'},
+    {ch:80,  L:0,  R:5,  note:''},
+    {ch:90,  L:18, R:12, note:''},
+    {ch:100, L:18, R:25, note:'End of Chain 2'},
+    {ch:125, L:0,  R:0,  note:'Station B'},
+  ].sort((a,b)=>a.ch-b.ch);
+}
+
+// ════════════════════════════════
+// NOTEBOOK RENDER
+// ════════════════════════════════
+let _plotTimer = null;
+function schedPlot(){ clearTimeout(_plotTimer); _plotTimer = setTimeout(()=>{ drawPlot(); calcArea(); }, 300); }
+
+function renderNotebook(){
+  const sorted = [...rows].sort((a,b)=>a.ch-b.ch);
+  const tbody = document.getElementById('nb-body');
+  const stnB = document.getElementById('stn-b').value||'Station B';
+  const stnA = document.getElementById('stn-a').value||'Station A (0)';
+  document.getElementById('stn-b-head').textContent = stnB;
+
+  tbody.innerHTML = '';
+  const display = [...sorted].reverse();
+
+  // Station B label row at top
+  const topRow = document.createElement('tr');
+  topRow.innerHTML = `<td style="background:#1a3d2855;color:#2d5a3d;font-size:10px;letter-spacing:.04em;"></td>
+    <td class="ch-cell" style="font-weight:600;font-size:11px;letter-spacing:.04em;">${stnB}</td>
+    <td style="background:#4a1a1255;color:#8b3a2a;font-size:10px;"></td>
+    <td class="note-cell"></td><td></td>`;
+  tbody.appendChild(topRow);
+
+  display.forEach((row) => {
+    const ri = rows.indexOf(row);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="number" class="inp-left" value="${row.L||''}" placeholder="—" step="0.1" min="0"
+        oninput="rows[${ri}].L=parseFloat(this.value)||0;schedPlot()"
+        onblur="rows[${ri}].L=parseFloat(this.value)||0;renderNotebook();schedPlot()"></td>
+      <td class="ch-cell"><input type="number" class="inp-ch" value="${row.ch}" step="0.1" min="0"
+        oninput="rows[${ri}].ch=parseFloat(this.value)||0;schedPlot()"
+        onblur="rows[${ri}].ch=parseFloat(this.value)||0;renderNotebook();schedPlot()"></td>
+      <td><input type="number" class="inp-right" value="${row.R||''}" placeholder="—" step="0.1" min="0"
+        oninput="rows[${ri}].R=parseFloat(this.value)||0;schedPlot()"
+        onblur="rows[${ri}].R=parseFloat(this.value)||0;renderNotebook();schedPlot()"></td>
+      <td class="note-cell"><input type="text" class="inp-note" value="${row.note||''}" placeholder="feature"
+        oninput="rows[${ri}].note=this.value"
+        onblur="rows[${ri}].note=this.value;renderNotebook()"></td>
+      <td><button class="del-btn" onclick="deleteRow(${ri})">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Station A label row at bottom
+  const botRow = document.createElement('tr');
+  botRow.innerHTML = `<td style="background:#1a3d2855;color:#2d5a3d;font-size:10px;"></td>
+    <td class="ch-cell" style="font-weight:600;font-size:11px;letter-spacing:.04em;">${stnA}</td>
+    <td style="background:#4a1a1255;color:#8b3a2a;font-size:10px;"></td>
+    <td class="note-cell"></td><td></td>`;
+  tbody.appendChild(botRow);
+}
+
+function addRow(){
+  const maxCh = rows.length ? Math.max(...rows.map(r=>r.ch)) : 0;
+  rows.push({ch:maxCh+10, L:0, R:0, note:''});
+  renderNotebook(); schedPlot();
+}
+function deleteRow(i){ if(rows.length>1){rows.splice(i,1);renderNotebook();schedPlot();} }
+function clearAll(){ rows=[{ch:0,L:0,R:0,note:'Start'},{ch:50,L:0,R:0,note:'End'}]; renderNotebook();schedPlot(); }
+function loadBHU(){ rows=getBHU(); currentUnit='ft'; document.getElementById('ubtn-ft').classList.add('active'); document.getElementById('ubtn-m').classList.remove('active'); renderNotebook();schedPlot(); }
+function loadExample(){ rows=getExample(); currentUnit='m'; document.getElementById('ubtn-m').classList.add('active'); document.getElementById('ubtn-ft').classList.remove('active'); renderNotebook();schedPlot(); }
+function setUnit(u, el){ currentUnit=u; document.querySelectorAll('.unit-bar button').forEach(b=>b.classList.remove('active')); el.classList.add('active'); document.getElementById('plot-unit-lbl').textContent=u; renderNotebook();schedPlot(); }
+function setView(v,el){ currentView=v; document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.remove('active')); el.classList.add('active'); drawPlot(); }
+function switchTab(name,el){ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active')); document.getElementById('panel-'+name).classList.add('active'); el.classList.add('active'); if(name==='plot')drawPlot(); if(name==='area')calcArea(); if(name==='outputmap')generateOutputMap(); }
+
+function refreshAll(){ renderNotebook(); drawPlot(); calcArea(); }
+
+// ════════════════════════════════
+// SURVEY PLOT
+// ════════════════════════════════
+function drawPlot(){
+  const canvas = document.getElementById('plot-canvas');
+  if(!canvas) return;
+  const DPR = window.devicePixelRatio||1;
+  const W = canvas.offsetWidth||800;
+  const H = 580;
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+
+  const pts = [...rows].sort((a,b)=>a.ch-b.ch);
+  if(pts.length<2) return;
+
+  const u = currentUnit;
+  const padL=70, padR=80, padT=44, padB=44;
+  const drawW=W-padL-padR, drawH=H-padT-padB;
+
+  // extents
+  const allX = [...pts.map(p=>-p.L), ...pts.map(p=>p.R), 0];
+  const allY = pts.map(p=>p.ch);
+  const xMin=Math.min(...allX)-4, xMax=Math.max(...allX)+4;
+  const yMin=Math.min(...allY)-4, yMax=Math.max(...allY)+4;
+  const xR=xMax-xMin, yR=yMax-yMin;
+  const sx=drawW/xR, sy=drawH/yR;
+
+  function cx(x){ return padL+(x-xMin)*sx; }
+  function cy(y){ return padT+drawH-(y-yMin)*sy; }
+
+  // grid
+  ctx.strokeStyle='#e4e0d6'; ctx.lineWidth=0.5;
+  const step = yR>300?50:yR>150?25:10;
+  const ys = Math.ceil(yMin/step)*step;
+  const mf = 'DM Mono, monospace';
+  for(let y=ys;y<=yMax;y+=step){
+    ctx.beginPath(); ctx.moveTo(padL,cy(y)); ctx.lineTo(W-padR,cy(y)); ctx.stroke();
+    ctx.fillStyle='#aaa8a0'; ctx.font=`9px ${mf}`; ctx.textAlign='right';
+    ctx.fillText(y, padL-5, cy(y)+3);
+  }
+  // x grid
+  const xs2 = xR>100?25:xR>50?10:5;
+  const xsS = Math.ceil(xMin/xs2)*xs2;
+  for(let x=xsS;x<=xMax;x+=xs2){
+    ctx.strokeStyle='#eae6da'; ctx.lineWidth=0.4;
+    ctx.beginPath(); ctx.moveTo(cx(x),padT); ctx.lineTo(cx(x),H-padB); ctx.stroke();
+  }
+
+  // polygon fill
+  const leftPts  = pts.filter(p=>p.L>0);
+  const rightPts = pts.filter(p=>p.R>0);
+  // polygon: bottom-base → left tips ascending → top-base → right tips descending
+  const polyCoords = [
+    {x:0, y:pts[0].ch},
+    ...leftPts.map(p=>({x:-p.L, y:p.ch})),
+    {x:0, y:pts[pts.length-1].ch},
+    ...[...rightPts].reverse().map(p=>({x:p.R, y:p.ch}))
+  ];
+  ctx.beginPath();
+  polyCoords.forEach((p,i)=>{ i===0?ctx.moveTo(cx(p.x),cy(p.y)):ctx.lineTo(cx(p.x),cy(p.y)); });
+  ctx.closePath();
+  ctx.fillStyle='rgba(45,90,61,0.09)'; ctx.fill();
+
+  // left boundary (tips connected)
+  if(leftPts.length>0){
+    ctx.beginPath();
+    ctx.moveTo(cx(0),cy(pts[0].ch));
+    leftPts.forEach(p=>ctx.lineTo(cx(-p.L),cy(p.ch)));
+    ctx.lineTo(cx(0),cy(pts[pts.length-1].ch));
+    ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  // right boundary (tips connected)
+  if(rightPts.length>0){
+    ctx.beginPath();
+    ctx.moveTo(cx(0),cy(pts[0].ch));
+    rightPts.forEach(p=>ctx.lineTo(cx(p.R),cy(p.ch)));
+    ctx.lineTo(cx(0),cy(pts[pts.length-1].ch));
+    ctx.strokeStyle='#8b3a2a'; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  // baseline dashed
+  ctx.beginPath(); ctx.moveTo(cx(0),cy(pts[0].ch)); ctx.lineTo(cx(0),cy(pts[pts.length-1].ch));
+  ctx.strokeStyle='#1c1a16'; ctx.lineWidth=1.5; ctx.setLineDash([6,3]); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if(currentView==='survey'){
+    // perpendicular offset lines + values
+    pts.forEach(p=>{
+      const bx=cx(0), by=cy(p.ch);
+      if(p.L>0){
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(cx(-p.L),by);
+        ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=0.9; ctx.setLineDash([3,2]); ctx.stroke(); ctx.setLineDash([]);
+        // right-angle mark
+        ctx.strokeStyle='#2d5a3d66'; ctx.lineWidth=0.7;
+        ctx.strokeRect(cx(-p.L)+2, by-4, 5, 5);
+        // tip dot
+        ctx.fillStyle='#2d5a3d'; ctx.beginPath(); ctx.arc(cx(-p.L),by,3.5,0,2*Math.PI); ctx.fill();
+        // label
+        ctx.fillStyle='#2d5a3d'; ctx.font=`9px ${mf}`; ctx.textAlign='right';
+        ctx.fillText(p.L+u, cx(-p.L)-6, by-5);
+        if(p.note){ ctx.fillStyle='#5a9a6a'; ctx.font=`8px ${mf}`; ctx.fillText('('+p.note+')', cx(-p.L)-6, by+9); }
+      }
+      if(p.R>0){
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(cx(p.R),by);
+        ctx.strokeStyle='#8b3a2a'; ctx.lineWidth=0.9; ctx.setLineDash([3,2]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle='#8b3a2a66'; ctx.lineWidth=0.7;
+        ctx.strokeRect(cx(p.R)-7, by-4, 5, 5);
+        ctx.fillStyle='#8b3a2a'; ctx.beginPath(); ctx.arc(cx(p.R),by,3.5,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='#8b3a2a'; ctx.font=`9px ${mf}`; ctx.textAlign='left';
+        ctx.fillText(p.R+u, cx(p.R)+6, by-5);
+        if(p.note){ ctx.fillStyle='#c07050'; ctx.font=`8px ${mf}`; ctx.fillText('('+p.note+')', cx(p.R)+6, by+9); }
+      }
+      // chainage tick
+      ctx.strokeStyle='#88807866'; ctx.lineWidth=0.8;
+      ctx.beginPath(); ctx.moveTo(bx-4,by); ctx.lineTo(bx+4,by); ctx.stroke();
+      ctx.fillStyle='#888780'; ctx.font=`8px ${mf}`; ctx.textAlign='center';
+      ctx.fillText(p.ch, bx, by+13);
+    });
+  } else {
+    // clean map — just boundary dots + labels
+    const allBound = [
+      ...leftPts.map(p=>({x:-p.L,y:p.ch,side:'L',val:p.L,note:p.note})),
+      ...rightPts.map(p=>({x:p.R,y:p.ch,side:'R',val:p.R,note:p.note}))
+    ];
+    allBound.forEach(p=>{
+      const col = p.side==='L'?'#2d5a3d':'#8b3a2a';
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx(p.x),cy(p.y),4,0,2*Math.PI); ctx.fill();
+      ctx.font=`9px ${mf}`; ctx.fillStyle=col;
+      ctx.textAlign=p.side==='L'?'right':'left';
+      const lx=p.side==='L'?cx(p.x)-7:cx(p.x)+7;
+      ctx.fillText(p.val+u, lx, cy(p.y)+3);
+      if(p.note){ ctx.fillStyle='#aaa'; ctx.font=`8px ${mf}`; ctx.fillText('('+p.note+')', lx, cy(p.y)+13); }
+    });
+    pts.forEach(p=>{ ctx.fillStyle='#88807888'; ctx.beginPath(); ctx.arc(cx(0),cy(p.ch),2,0,2*Math.PI); ctx.fill(); });
+  }
+
+  // N arrow
+  const nax=W-padR+20, nay=padT+14;
+  ctx.beginPath(); ctx.moveTo(nax,nay+22); ctx.lineTo(nax,nay);
+  ctx.strokeStyle='#1c1a16'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(nax-5,nay+9); ctx.lineTo(nax,nay); ctx.lineTo(nax+5,nay+9); ctx.stroke();
+  ctx.fillStyle='#1c1a16'; ctx.font=`bold 11px ${mf}`; ctx.textAlign='center'; ctx.fillText('N',nax,nay+36);
+
+  // axis label
+  ctx.save(); ctx.translate(13,padT+drawH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#7a7468'; ctx.font=`10px ${mf}`; ctx.textAlign='center';
+  ctx.fillText(`Chainage (${u})`,0,0); ctx.restore();
+
+  // title
+  ctx.fillStyle='#1c1a16'; ctx.font=`500 11px ${mf}`; ctx.textAlign='left';
+  ctx.fillText('Field boundary — chain survey plot', padL, padT-14);
+  const scaleVal = document.getElementById('plot-scale').value||10;
+  ctx.fillStyle='#7a7468'; ctx.font=`9px ${mf}`; ctx.textAlign='right';
+  ctx.fillText(`Scale 1cm = ${scaleVal} ${u}`, W-padR, padT-14);
+}
+
+// ════════════════════════════════
+// AREA
+// ════════════════════════════════
+function calcArea(){
+  const pts = [...rows].sort((a,b)=>a.ch-b.ch);
+  if(pts.length<2) return;
+  const u = currentUnit;
+  const u2 = u==='ft'?'ft²':'m²';
+
+  // Build polygon
+  const leftPts  = pts.filter(p=>p.L>0);
+  const rightPts = pts.filter(p=>p.R>0);
+  const poly = [
+    {x:0, y:pts[0].ch},
+    ...leftPts.map(p=>({x:-p.L, y:p.ch})),
+    {x:0, y:pts[pts.length-1].ch},
+    ...[...rightPts].reverse().map(p=>({x:p.R, y:p.ch}))
+  ];
+  const n=poly.length;
+  let shoelace=0;
+  for(let i=0;i<n;i++){ const j=(i+1)%n; shoelace+=poly[i].x*poly[j].y-poly[j].x*poly[i].y; }
+  const area=Math.abs(shoelace)/2;
+
+  // Trapezoidal
+  let aL=0,aR=0;
+  for(let i=0;i<pts.length-1;i++){
+    const d=pts[i+1].ch-pts[i].ch;
+    aL+=((pts[i].L+pts[i+1].L)/2)*d;
+    aR+=((pts[i].R+pts[i+1].R)/2)*d;
+  }
+
+  // perimeter
+  let perim=0;
+  for(let i=0;i<n;i++){ const j=(i+1)%n; const dx=poly[j].x-poly[i].x,dy=poly[j].y-poly[i].y; perim+=Math.sqrt(dx*dx+dy*dy); }
+
+  const bl=pts[pts.length-1].ch-pts[0].ch;
+
+  document.getElementById('area-results').innerHTML =
+    rcard('Total area (Shoelace)',fmt(area,1),u2)+
+    rcard('Left side area (Trap.)',fmt(aL,1),u2)+
+    rcard('Right side area (Trap.)',fmt(aR,1),u2)+
+    rcard('Baseline length',fmt(bl,1),u)+
+    rcard('Perimeter',fmt(perim,1),u)+
+    rcard('Survey stations',pts.length,'');
+
+  // Left detail table
+  buildSideTable('left-area-table', pts, 'L', u, u2);
+  buildSideTable('right-area-table', pts, 'R', u, u2);
+}
+
+function buildSideTable(tableId, pts, side, u, u2){
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  tbody.innerHTML='';
+  let total=0;
+  for(let i=0;i<pts.length-1;i++){
+    const o1=pts[i][side], o2=pts[i+1][side];
+    const avg=(o1+o2)/2;
+    const interval=pts[i+1].ch-pts[i].ch;
+    const strip=avg*interval;
+    total+=strip;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${pts[i].ch}→${pts[i+1].ch}</td><td>${o1} / ${o2}</td><td>${fmt(avg,2)}</td><td>${fmt(interval,1)}</td><td>${fmt(strip,2)}</td>`;
+    tbody.appendChild(tr);
+  }
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td colspan="4" style="font-weight:500;text-align:right;">Total</td><td style="font-weight:500;">${fmt(total,2)} ${u2}</td>`;
+  tbody.appendChild(tr);
+}
+
+// ════════════════════════════════
+// CORRECTIONS
+// ════════════════════════════════
+function calcChainLen(){
+  const nom=parseFloat(document.getElementById('cl-nom').value)||20;
+  const act=parseFloat(document.getElementById('cl-act').value)||20;
+  const dist=parseFloat(document.getElementById('cl-dist').value)||0;
+  const area=parseFloat(document.getElementById('cl-area').value)||0;
+  const r=act/nom;
+  document.getElementById('chainlen-results').innerHTML=
+    rcard('True distance',fmt(dist*r,3),'m')+
+    rcard('True area',fmt(area*r*r,2),'m²')+
+    rcard('Chain ratio',fmt(r,5),'');
+}
+function calcSag(){
+  const L=parseFloat(document.getElementById('sag-L').value)||1;
+  const w=parseFloat(document.getElementById('sag-w').value)||0;
+  const T=parseFloat(document.getElementById('sag-T').value)||1;
+  const c=-(w*w*L*L*L)/(24*T*T);
+  document.getElementById('sag-results').innerHTML=
+    rcard('Sag correction',fmt(c,6),'m')+
+    rcard('Corrected length',fmt(L+c,4),'m');
+}
+function calcTemp(){
+  const std=parseFloat(document.getElementById('tmp-std').value)||20;
+  const fld=parseFloat(document.getElementById('tmp-fld').value)||20;
+  const L=parseFloat(document.getElementById('tmp-L').value)||1;
+  const al=parseFloat(document.getElementById('tmp-alpha').value)||11.2;
+  const c=al*1e-6*(fld-std)*L;
+  document.getElementById('temp-results').innerHTML=
+    rcard('Temp correction',fmt(c,5),'m')+
+    rcard('Corrected length',fmt(L+c,3),'m')+
+    rcard('ΔT',fmt(fld-std,1),'°C');
+}
+function calcSlope(){
+  const L=parseFloat(document.getElementById('slp-L').value)||1;
+  const h=parseFloat(document.getElementById('slp-h').value)||0;
+  const horiz=Math.sqrt(L*L-h*h);
+  const approx=-(h*h)/(2*L);
+  document.getElementById('slope-results').innerHTML=
+    rcard('Horizontal distance',fmt(horiz,4),'m')+
+    rcard('Slope correction (approx)',fmt(approx,5),'m')+
+    rcard('Slope angle',fmt(Math.asin(h/L)*180/Math.PI,2),'°');
+}
+function calcOblique(){
+  const off=parseFloat(document.getElementById('ob-off').value)||0;
+  const ang=parseFloat(document.getElementById('ob-ang').value)||0;
+  const r=ang*Math.PI/180;
+  document.getElementById('oblique-results').innerHTML=
+    rcard('True offset (⊥)',fmt(off*Math.cos(r),3),'ft')+
+    rcard('Chainage correction',fmt(off*Math.sin(r),3),'ft')+
+    rcard('cos θ',fmt(Math.cos(r),4),'');
+}
+function calcClose(){
+  const el=parseFloat(document.getElementById('ce-el').value)||0;
+  const ed=parseFloat(document.getElementById('ce-ed').value)||0;
+  const tot=parseFloat(document.getElementById('ce-tot').value)||1;
+  const e=Math.sqrt(el*el+ed*ed);
+  const acc=Math.round(tot/e);
+  let b='',bc='';
+  if(acc>=1000){b='Accurate';bc='b-green';}else if(acc>=500){b='Acceptable';bc='b-amber';}else{b='Re-survey';bc='b-red';}
+  document.getElementById('close-results').innerHTML=
+    rcard('Closing error',fmt(e,4),'m')+
+    rcard('Accuracy','1 : '+acc.toLocaleString('en-IN'),'',b,bc)+
+    rcard('Error bearing',fmt(Math.atan2(ed,el)*180/Math.PI,1),'°');
+}
+
+// ════════════════════════════════
+// ERRORS TABLE
+// ════════════════════════════════
+const ERRORS = [
+  {type:'Instrumental', err:'Chain or incorrect length',          fix:'Standardise chain before and after work. Apply correction.'},
+  {type:'Instrumental', err:'Kinks in the chain',                 fix:'Straighten chain on ground before measuring. Replace bent links.'},
+  {type:'Instrumental', err:'Sag in the chain',                   fix:'Apply sag correction. Use tape with adequate tension.'},
+  {type:'Natural',      err:'Expansion/contraction due to temperature',fix:'Apply temperature correction. Measure at standard temperature.'},
+  {type:'Personal',     err:'Wrong alignment — chain not tight',  fix:'Use ranging rods. Pull chain taut with standard tension.'},
+  {type:'Personal',     err:'Arrow not vertical',                 fix:'Hold arrow vertical while inserting into ground.'},
+  {type:'Personal',     err:'Chain not against arrows',           fix:'Ensure follower places chain end exactly at arrow.'},
+  {type:'Personal',     err:'Elongation due to pull',             fix:'Apply tension correction. Use standard pull.'},
+  {type:'Personal',     err:'Incorrect allowances for slopes',    fix:'Apply slope correction. Record angles with clinometer.'},
+  {type:'Personal',     err:'Incorrect reading of chains',        fix:'Read carefully. Verify tag counts.'},
+  {type:'Personal',     err:'Chaining over obstacles carelessly', fix:'Use special methods (stepping, hypotenuse).'},
+  {type:'Personal',     err:'Incorrect booking of results',       fix:'Read aloud and verify with follower. Re-read before moving.'},
+  {type:'Personal',     err:'Omission of one or more chain lengths',fix:'Keep running count of arrows collected.'},
+  {type:'Personal',     err:'Mistaking position of end of chain', fix:'Both ends must be clearly identified.'},
+  {type:'Personal',     err:'Miscounting odd links between tags', fix:'Count carefully. Use standard 20m / 30m chains.'},
+  {type:'Personal',     err:'Confusion of tags (e.g. 40 and 60)',fix:'Learn tag conventions. Double-check at each reading.'},
+  {type:'Personal',     err:'Mistaking 6 for 9 in tape',         fix:'Mark tape with reference pencil. Always read in same direction.'},
+];
+
+function buildErrors(){
+  const tbody=document.getElementById('errors-body');
+  ERRORS.forEach((e,i)=>{
+    const tr=document.createElement('tr');
+    const typeColor=e.type==='Instrumental'?'var(--blue)':e.type==='Natural'?'var(--amber)':'var(--red)';
+    tr.innerHTML=`<td class="err-num">${i+1}</td>
+      <td class="err-type" style="color:${typeColor}">${e.type}</td>
+      <td>${e.err}</td>
+      <td style="color:var(--muted)">${e.fix}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ════════════════════════════════
+// HELPERS
+// ════════════════════════════════
+function fmt(v,d=2){ return (isNaN(v)||!isFinite(v))?'—':parseFloat(v.toFixed(d)).toLocaleString('en-IN',{maximumFractionDigits:d}); }
+
+function rcard(label,val,unit,badge,bc){
+  return `<div class="res-card"><div class="res-label">${label}</div>
+    <div class="res-val">${val}<span class="res-unit">${unit||''}</span>${badge?`<span class="badge ${bc||''}">${badge}</span>`:''}</div></div>`;
+}
+
+// ════════════════════════════════
+// OUTPUT MAP — SVG generator
+// ════════════════════════════════
+let _omSvgString = '';
+
+function generateOutputMap(){
+  const pts = [...rows].sort((a,b)=>a.ch-b.ch);
+  if(pts.length < 2){ alert('Need at least 2 data rows.'); return; }
+
+  const u     = currentUnit;
+  const scale = parseFloat(document.getElementById('om-scale').value) || 4;
+  const showGrid   = document.getElementById('om-grid').value === 'yes';
+  const showLabels = document.getElementById('om-labels').value === 'yes';
+  const showNotes  = document.getElementById('om-notes').value === 'yes';
+  const title   = document.getElementById('om-title').value   || 'Chain Survey';
+  const surveyor= document.getElementById('om-surveyor').value|| '';
+  const date    = document.getElementById('om-date').value    || '';
+  const dept    = document.getElementById('om-dept').value    || '';
+
+  // Coordinate extents
+  const allX  = [...pts.map(p=>-p.L), ...pts.map(p=>p.R), 0];
+  const allY  = pts.map(p=>p.ch);
+  const xMin  = Math.min(...allX);
+  const xMax  = Math.max(...allX);
+  const yMin  = Math.min(...allY);
+  const yMax  = Math.max(...allY);
+
+  const padL=80, padR=100, padT=110, padB=160;
+  const drawW = (xMax - xMin) * scale;
+  const drawH = (yMax - yMin) * scale;
+  const W = drawW + padL + padR;
+  const H = drawH + padT + padB;
+
+  function mx(x){ return padL + (x - xMin)*scale; }
+  function my(y){ return padT + (yMax - y)*scale; }  // SVG y flipped
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="background:#faf8f3;font-family:'DM Mono',Courier,monospace;">`;
+  svg += `<defs>
+    <pattern id="smallgrid" width="${10*scale/10}" height="${10*scale/10}" patternUnits="userSpaceOnUse">
+      <path d="M ${10*scale/10} 0 L 0 0 0 ${10*scale/10}" fill="none" stroke="#e0ddd5" stroke-width="0.4"/>
+    </pattern>
+    <pattern id="grid" width="${scale*10}" height="${scale*10}" patternUnits="userSpaceOnUse">
+      <rect width="${scale*10}" height="${scale*10}" fill="url(#smallgrid)"/>
+      <path d="M ${scale*10} 0 L 0 0 0 ${scale*10}" fill="none" stroke="#d5d1c8" stroke-width="0.8"/>
+    </pattern>
+    <marker id="arr-n" markerWidth="8" markerHeight="8" refX="4" refY="8" orient="auto">
+      <path d="M4,0 L7,8 L4,5 L1,8 Z" fill="#1c1a16"/>
+    </marker>
+  </defs>`;
+
+  // Border frame
+  svg += `<rect x="1" y="1" width="${W-2}" height="${H-2}" rx="3" fill="none" stroke="#bbb8b0" stroke-width="1.5"/>`;
+  svg += `<rect x="6" y="6" width="${W-12}" height="${H-12}" rx="2" fill="none" stroke="#d5d1c8" stroke-width="0.5"/>`;
+
+  // Title block at top
+  svg += `<rect x="6" y="6" width="${W-12}" height="90" rx="2" fill="#1c1a16"/>`;
+  svg += `<text x="${W/2}" y="38" text-anchor="middle" fill="#f7f4ee" font-size="18" font-weight="600" letter-spacing="-0.3" style="font-family:'Fraunces',Georgia,serif;">${escSvg(title)}</text>`;
+  svg += `<text x="${W/2}" y="58" text-anchor="middle" fill="#9a9488" font-size="10" letter-spacing="0.08em" text-transform="uppercase">${escSvg(dept)}</text>`;
+  svg += `<text x="20" y="80" fill="#a8c4ae" font-size="9" letter-spacing="0.04em">Surveyor: ${escSvg(surveyor)}</text>`;
+  svg += `<text x="${W/2}" y="80" text-anchor="middle" fill="#a8c4ae" font-size="9" letter-spacing="0.04em">Date: ${escSvg(date)}</text>`;
+  svg += `<text x="${W-20}" y="80" text-anchor="end" fill="#a8c4ae" font-size="9" letter-spacing="0.04em">Unit: ${u}</text>`;
+
+  // Drawing area background
+  svg += `<rect x="${padL-10}" y="${padT-10}" width="${drawW+20}" height="${drawH+20}" fill="#fdfcf9" stroke="#e8e4dc" stroke-width="0.7"/>`;
+
+  // Grid
+  if(showGrid){
+    svg += `<rect x="${padL-10}" y="${padT-10}" width="${drawW+20}" height="${drawH+20}" fill="url(#grid)" opacity="0.7"/>`;
+    // Chainage tick labels on Y axis
+    const step = (yMax-yMin)>200?50:(yMax-yMin)>80?20:10;
+    const ys = Math.ceil(yMin/step)*step;
+    for(let y=ys; y<=yMax; y+=step){
+      const yy = my(y);
+      svg += `<line x1="${padL-14}" y1="${yy}" x2="${padL-10}" y2="${yy}" stroke="#7a7468" stroke-width="0.8"/>`;
+      svg += `<text x="${padL-16}" y="${yy+3}" text-anchor="end" fill="#7a7468" font-size="8">${y}</text>`;
+    }
+    // X axis ticks
+    const stepX = (xMax-xMin)>100?20:(xMax-xMin)>40?10:5;
+    const xsS = Math.ceil(xMin/stepX)*stepX;
+    for(let x=xsS; x<=xMax; x+=stepX){
+      const xx = mx(x);
+      svg += `<line x1="${xx}" y1="${padT+drawH+10}" x2="${xx}" y2="${padT+drawH+14}" stroke="#7a7468" stroke-width="0.8"/>`;
+      svg += `<text x="${xx}" y="${padT+drawH+24}" text-anchor="middle" fill="#7a7468" font-size="8">${x}</text>`;
+    }
+  }
+
+  // Axis labels
+  svg += `<text x="${padL + drawW/2}" y="${padT+drawH+38}" text-anchor="middle" fill="#5a5650" font-size="9" letter-spacing="0.04em">Offset (${u})</text>`;
+  // Rotated chainage label
+  svg += `<text transform="translate(${padL-42},${padT+drawH/2}) rotate(-90)" text-anchor="middle" fill="#5a5650" font-size="9" letter-spacing="0.04em">Chainage (${u})</text>`;
+
+  // Polygon fill
+  const leftPts  = pts.filter(p=>p.L>0);
+  const rightPts = pts.filter(p=>p.R>0);
+  const polyCoords = [
+    {x:0,  y:pts[0].ch},
+    ...leftPts.map(p=>({x:-p.L, y:p.ch})),
+    {x:0,  y:pts[pts.length-1].ch},
+    ...[...rightPts].reverse().map(p=>({x:p.R, y:p.ch}))
+  ];
+  const polyStr = polyCoords.map(p=>`${mx(p.x)},${my(p.y)}`).join(' ');
+  svg += `<polygon points="${polyStr}" fill="rgba(45,90,61,0.10)" stroke="none"/>`;
+
+  // Baseline dashed
+  svg += `<line x1="${mx(0)}" y1="${my(pts[0].ch)}" x2="${mx(0)}" y2="${my(pts[pts.length-1].ch)}" stroke="#1c1a16" stroke-width="1.8" stroke-dasharray="7,4"/>`;
+
+  // Perpendicular offset lines
+  pts.forEach(p=>{
+    const bx = mx(0), by = my(p.ch);
+    if(p.L > 0){
+      svg += `<line x1="${bx}" y1="${by}" x2="${mx(-p.L)}" y2="${by}" stroke="#2d5a3d" stroke-width="0.8" stroke-dasharray="3,2"/>`;
+      // right-angle mark
+      svg += `<path d="M${mx(-p.L)+3},${by} L${mx(-p.L)+3},${by-5} L${mx(-p.L)+8},${by-5}" fill="none" stroke="#2d5a3d" stroke-width="0.7" opacity="0.7"/>`;
+    }
+    if(p.R > 0){
+      svg += `<line x1="${bx}" y1="${by}" x2="${mx(p.R)}" y2="${by}" stroke="#8b3a2a" stroke-width="0.8" stroke-dasharray="3,2"/>`;
+      svg += `<path d="M${mx(p.R)-3},${by} L${mx(p.R)-3},${by-5} L${mx(p.R)-8},${by-5}" fill="none" stroke="#8b3a2a" stroke-width="0.7" opacity="0.7"/>`;
+    }
+    // chainage tick on baseline
+    svg += `<line x1="${bx-5}" y1="${by}" x2="${bx+5}" y2="${by}" stroke="#66615a" stroke-width="0.8"/>`;
+    svg += `<text x="${bx+8}" y="${by+3}" fill="#66615a" font-size="7.5">${p.ch}</text>`;
+  });
+
+  // Left boundary
+  if(leftPts.length > 0){
+    let d = `M${mx(0)},${my(pts[0].ch)}`;
+    leftPts.forEach(p=>{ d += ` L${mx(-p.L)},${my(p.ch)}`; });
+    d += ` L${mx(0)},${my(pts[pts.length-1].ch)}`;
+    svg += `<path d="${d}" fill="none" stroke="#2d5a3d" stroke-width="2.2" stroke-linejoin="round"/>`;
+    // Tip dots + labels
+    leftPts.forEach(p=>{
+      svg += `<circle cx="${mx(-p.L)}" cy="${my(p.ch)}" r="3.5" fill="#2d5a3d"/>`;
+      if(showLabels) svg += `<text x="${mx(-p.L)-7}" y="${my(p.ch)-5}" text-anchor="end" fill="#2d5a3d" font-size="8.5" font-weight="500">${p.L}${u}</text>`;
+      if(showNotes && p.note) svg += `<text x="${mx(-p.L)-7}" y="${my(p.ch)+8}" text-anchor="end" fill="#5a9a6a" font-size="7" font-style="italic">(${escSvg(p.note)})</text>`;
+    });
+  }
+
+  // Right boundary
+  if(rightPts.length > 0){
+    let d = `M${mx(0)},${my(pts[0].ch)}`;
+    rightPts.forEach(p=>{ d += ` L${mx(p.R)},${my(p.ch)}`; });
+    d += ` L${mx(0)},${my(pts[pts.length-1].ch)}`;
+    svg += `<path d="${d}" fill="none" stroke="#8b3a2a" stroke-width="2.2" stroke-linejoin="round"/>`;
+    rightPts.forEach(p=>{
+      svg += `<circle cx="${mx(p.R)}" cy="${my(p.ch)}" r="3.5" fill="#8b3a2a"/>`;
+      if(showLabels) svg += `<text x="${mx(p.R)+7}" y="${my(p.ch)-5}" fill="#8b3a2a" font-size="8.5" font-weight="500">${p.R}${u}</text>`;
+      if(showNotes && p.note) svg += `<text x="${mx(p.R)+7}" y="${my(p.ch)+8}" fill="#c07050" font-size="7" font-style="italic">(${escSvg(p.note)})</text>`;
+    });
+  }
+
+  // Station labels
+  svg += `<circle cx="${mx(0)}" cy="${my(pts[0].ch)}" r="5" fill="#1c1a16"/>`;
+  svg += `<text x="${mx(0)+9}" y="${my(pts[0].ch)+4}" fill="#1c1a16" font-size="9" font-weight="500">Stn A (${pts[0].ch})</text>`;
+  svg += `<circle cx="${mx(0)}" cy="${my(pts[pts.length-1].ch)}" r="5" fill="#1c1a16"/>`;
+  svg += `<text x="${mx(0)+9}" y="${my(pts[pts.length-1].ch)+4}" fill="#1c1a16" font-size="9" font-weight="500">Stn B (${pts[pts.length-1].ch})</text>`;
+
+  // North arrow (top-right of drawing area)
+  const nax = padL + drawW + 55, nay = padT + 20;
+  svg += `<line x1="${nax}" y1="${nay+28}" x2="${nax}" y2="${nay}" stroke="#1c1a16" stroke-width="1.5" marker-end="url(#arr-n)"/>`;
+  svg += `<text x="${nax}" y="${nay+42}" text-anchor="middle" fill="#1c1a16" font-size="11" font-weight="bold">N</text>`;
+
+  // Scale bar
+  const scaleBarU = Math.pow(10, Math.floor(Math.log10((yMax-yMin)/3)));
+  const sbLen = scaleBarU * scale;
+  const sbX = padL + drawW - sbLen - 10, sbY = padT + drawH + 52;
+  svg += `<line x1="${sbX}" y1="${sbY}" x2="${sbX+sbLen}" y2="${sbY}" stroke="#1c1a16" stroke-width="2"/>`;
+  svg += `<line x1="${sbX}" y1="${sbY-4}" x2="${sbX}" y2="${sbY+4}" stroke="#1c1a16" stroke-width="1.5"/>`;
+  svg += `<line x1="${sbX+sbLen}" y1="${sbY-4}" x2="${sbX+sbLen}" y2="${sbY+4}" stroke="#1c1a16" stroke-width="1.5"/>`;
+  svg += `<text x="${sbX+sbLen/2}" y="${sbY-7}" text-anchor="middle" fill="#1c1a16" font-size="8">${scaleBarU} ${u}</text>`;
+  svg += `<text x="${sbX+sbLen/2}" y="${sbY+12}" text-anchor="middle" fill="#7a7468" font-size="7">Scale bar</text>`;
+
+  // Legend
+  const legX = padL, legY = padT + drawH + 70;
+  svg += `<rect x="${legX}" y="${legY-14}" width="280" height="44" rx="2" fill="#f0ece1" stroke="#d5d1c8" stroke-width="0.7"/>`;
+  svg += `<text x="${legX+8}" y="${legY-2}" fill="#1c1a16" font-size="8.5" font-weight="500" letter-spacing="0.04em">LEGEND</text>`;
+  // Baseline symbol
+  svg += `<line x1="${legX+8}" y1="${legY+12}" x2="${legX+32}" y2="${legY+12}" stroke="#1c1a16" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+  svg += `<text x="${legX+36}" y="${legY+15}" fill="#1c1a16" font-size="8">Baseline (chain line)</text>`;
+  // Left boundary
+  svg += `<line x1="${legX+8}" y1="${legY+24}" x2="${legX+32}" y2="${legY+24}" stroke="#2d5a3d" stroke-width="2"/>`;
+  svg += `<text x="${legX+36}" y="${legY+27}" fill="#2d5a3d" font-size="8">Left boundary</text>`;
+  // Right boundary
+  svg += `<line x1="${legX+130}" y1="${legY+24}" x2="${legX+154}" y2="${legY+24}" stroke="#8b3a2a" stroke-width="2"/>`;
+  svg += `<text x="${legX+158}" y="${legY+27}" fill="#8b3a2a" font-size="8">Right boundary</text>`;
+
+  // Area + stats summary box (bottom right)
+  const area = computeArea(pts);
+  const bl   = pts[pts.length-1].ch - pts[0].ch;
+  const boxX = W - padR - 60, boxY = padT + drawH + 56;
+  svg += `<rect x="${boxX-4}" y="${boxY-14}" width="130" height="60" rx="2" fill="#1c1a16"/>`;
+  svg += `<text x="${boxX+61}" y="${boxY-2}" text-anchor="middle" fill="#a8c4ae" font-size="8" letter-spacing="0.06em">SURVEY SUMMARY</text>`;
+  svg += `<text x="${boxX}" y="${boxY+11}" fill="#f7f4ee" font-size="8">Area (Shoelace): ${fmt(area,1)} ${u}²</text>`;
+  svg += `<text x="${boxX}" y="${boxY+22}" fill="#f7f4ee" font-size="8">Baseline: ${fmt(bl,1)} ${u}</text>`;
+  svg += `<text x="${boxX}" y="${boxY+33}" fill="#f7f4ee" font-size="8">Stations: ${pts.length}</text>`;
+
+  svg += `</svg>`;
+  _omSvgString = svg;
+
+  // Inject preview
+  document.getElementById('om-svg-container').innerHTML = svg;
+  document.getElementById('om-preview-card').style.display = 'block';
+  document.getElementById('om-dl-svg').style.display = 'inline-block';
+  document.getElementById('om-dl-png').style.display = 'inline-block';
+  document.getElementById('om-preview-meta').textContent = `${W}×${H}px · ${pts.length} stations · Area ≈ ${fmt(area,1)} ${u}²`;
+
+  // Summary table
+  buildOMSummary(pts, u);
+  document.getElementById('om-summary-card').style.display = 'block';
+}
+
+function computeArea(pts){
+  const leftPts  = pts.filter(p=>p.L>0);
+  const rightPts = pts.filter(p=>p.R>0);
+  const poly = [
+    {x:0, y:pts[0].ch},
+    ...leftPts.map(p=>({x:-p.L, y:p.ch})),
+    {x:0, y:pts[pts.length-1].ch},
+    ...[...rightPts].reverse().map(p=>({x:p.R, y:p.ch}))
+  ];
+  const n=poly.length; let s=0;
+  for(let i=0;i<n;i++){ const j=(i+1)%n; s+=poly[i].x*poly[j].y-poly[j].x*poly[i].y; }
+  return Math.abs(s)/2;
+}
+
+function buildOMSummary(pts, u){
+  const u2 = u==='ft'?'ft²':'m²';
+  let html = `<table class="err-table" style="font-size:11.5px;"><thead><tr>
+    <th>#</th><th>Chainage (${u})</th><th>Left offset (${u})</th><th>Right offset (${u})</th><th>Note</th>
+  </tr></thead><tbody>`;
+  pts.forEach((p,i)=>{
+    html += `<tr><td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:500">${p.ch}</td>
+      <td style="color:var(--green)">${p.L||'—'}</td>
+      <td style="color:var(--red)">${p.R||'—'}</td>
+      <td style="color:var(--muted);font-size:10px;">${p.note||''}</td></tr>`;
+  });
+  const area = computeArea(pts);
+  const bl   = pts[pts.length-1].ch - pts[0].ch;
+  html += `</tbody><tfoot><tr>
+    <td colspan="5" style="padding:10px 10px 4px;background:var(--surface2);font-size:11px;">
+      <strong>Area (Shoelace):</strong> ${fmt(area,2)} ${u2} &nbsp;·&nbsp;
+      <strong>Baseline:</strong> ${fmt(bl,1)} ${u} &nbsp;·&nbsp;
+      <strong>Stations:</strong> ${pts.length}
+    </td></tr></tfoot></table>`;
+  document.getElementById('om-summary-content').innerHTML = html;
+}
+
+function downloadSVG(){
+  if(!_omSvgString) return;
+  const t = document.getElementById('om-title').value.replace(/[^a-zA-Z0-9_-]/g,'_') || 'chain_survey';
+  const blob = new Blob([_omSvgString], {type:'image/svg+xml'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download = t+'_map.svg'; a.click();
+}
+
+function downloadPNG(){
+  if(!_omSvgString) return;
+  const t = document.getElementById('om-title').value.replace(/[^a-zA-Z0-9_-]/g,'_') || 'chain_survey';
+  const container = document.getElementById('om-svg-container');
+  const svgEl = container.querySelector('svg');
+  if(!svgEl) return;
+  const W = parseFloat(svgEl.getAttribute('width'));
+  const H = parseFloat(svgEl.getAttribute('height'));
+  const canvas = document.createElement('canvas');
+  const sc = 2; canvas.width=W*sc; canvas.height=H*sc;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(sc,sc);
+  const blob = new Blob([_omSvgString],{type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = ()=>{
+    ctx.drawImage(img,0,0,W,H);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href=canvas.toDataURL('image/png');
+    a.download = t+'_map.png'; a.click();
+  };
+  img.onerror = ()=>{ alert('PNG export requires a modern browser. Try downloading as SVG instead, then convert.'); URL.revokeObjectURL(url); };
+  img.src = url;
+}
+
+function escSvg(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+loadBHU();
+buildErrors();
+calcChainLen(); calcSag(); calcTemp(); calcSlope(); calcOblique(); calcClose();
+setTimeout(()=>{ drawPlot(); calcArea(); },200);
+window.addEventListener('resize',()=>{ drawPlot(); });
+</script>
+</body>
+</html>
