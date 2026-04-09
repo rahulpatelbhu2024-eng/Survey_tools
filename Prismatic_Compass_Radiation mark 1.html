@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prismatic Compass — Radiation Method Field Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Fraunces:ital,wght@0,300;0,600;1,300;1,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f2eb; --surface:#ffffff; --surface2:#ede9df; --surface3:#e2ddd1;
+  --border:#d8d3c6; --border2:#c9c3b4;
+  --text:#1a1814; --muted:#7a7468; --faint:#aaa89e;
+  --navy:#1a3a5c; --navy-bg:#e8eff7; --navy-mid:#2d5a8a;
+  --green:#2d5a3d; --green-bg:#e8f0ea; --green-mid:#5a9a6a;
+  --red:#8b3a2a; --red-bg:#f5ebe8;
+  --amber:#8a5f1a; --amber-bg:#faf3e0;
+  --gold:#b5860d; --gold-bg:#fdf6e3;
+  --mono:'DM Mono',monospace; --serif:'Fraunces',Georgia,serif;
+  --shadow:0 2px 12px rgba(0,0,0,.08); --shadow-lg:0 6px 28px rgba(0,0,0,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh;}
+
+/* ── PROGRESS BAR ── */
+#prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--green),var(--gold));width:0%;z-index:1000;transition:width .1s;}
+
+/* ── HEADER ── */
+header{background:var(--text);color:var(--bg);padding:28px 40px 22px;position:relative;overflow:hidden;}
+header h1{font-family:var(--serif);font-weight:300;font-size:28px;letter-spacing:-0.3px;line-height:1.1;position:relative;z-index:2;}
+header h1 em{font-style:italic;color:#a8c4ae;}
+header h1 span{color:#c4a85a;}
+.hdr-sub{font-size:10px;color:#9a9488;letter-spacing:0.06em;margin-top:6px;position:relative;z-index:2;}
+.hdr-meta{font-size:10px;color:#888;text-align:right;position:relative;z-index:2;}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
+.particle{position:absolute;border-radius:50%;opacity:0.08;pointer-events:none;}
+
+/* ── TABS ── */
+.tabbar{display:flex;background:var(--text);border-top:1px solid #2a2a28;padding:0 40px;overflow-x:auto;}
+.tabbar button{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 18px;background:none;border:none;color:#666;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.tabbar button.active{color:#a8c4ae;border-bottom-color:#a8c4ae;}
+.tabbar button:hover:not(.active){color:#bbb;}
+
+/* ── LAYOUT ── */
+main{max-width:1050px;margin:0 auto;padding:28px 20px 60px;}
+.panel{display:none;} .panel.active{display:block;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:20px;overflow:hidden;}
+.card-head{padding:13px 18px 11px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.card-head h2{font-family:var(--serif);font-weight:600;font-size:15px;}
+.card-head h2 em{font-style:italic;font-weight:300;}
+.card-head .sub{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);}
+.card-body{padding:16px 18px;}
+
+/* ── FORMULA BOX ── */
+.formula{background:var(--surface2);border-left:3px solid var(--navy);padding:9px 12px;font-size:11.5px;color:var(--muted);line-height:1.9;margin-bottom:14px;border-radius:0 2px 2px 0;}
+
+/* ── INFO BOX ── */
+.info-box{background:var(--navy-bg);border-left:3px solid var(--navy);padding:10px 14px;font-size:11.5px;color:#1a3a6a;line-height:1.8;border-radius:0 2px 2px 0;margin-bottom:14px;}
+.info-box strong{font-weight:500;}
+
+/* ── NOTEBOOK TABLE ── */
+.nb-wrap{overflow-x:auto;}
+table.nb{width:100%;border-collapse:collapse;font-size:12px;}
+table.nb th{background:var(--text);color:var(--bg);font-weight:500;padding:8px 10px;text-align:center;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;}
+table.nb th.stn-h{background:#1a3d52;}
+table.nb th.brg-h{background:#3a1a52;}
+table.nb th.len-h{background:#1a3d28;}
+table.nb th.base-h{background:#2a2820;}
+table.nb td{padding:5px 6px;border:1px solid var(--border);text-align:center;vertical-align:middle;}
+table.nb td.note-cell{background:#fafaf7;font-size:11px;color:var(--muted);text-align:left;}
+table.nb input{width:80px;padding:4px 6px;border:1px solid var(--border2);border-radius:2px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;}
+table.nb input.inp-stn{width:55px;background:#e8eff7;}
+table.nb input.inp-brg{width:75px;background:#f2eef7;border-color:#7a5a9a44;}
+table.nb input.inp-len{width:75px;background:#f0f7f2;border-color:#2d5a3d44;}
+table.nb input.inp-note{width:110px;text-align:left;}
+table.nb input:focus{outline:none;border-color:var(--navy);}
+table.nb .del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0 4px;border-radius:2px;}
+table.nb .del-btn:hover{background:var(--red-bg);}
+table.nb tr:hover td{background:#fafaf5;}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:0.04em;padding:7px 16px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);color:var(--text);cursor:pointer;transition:background .15s;}
+.btn:hover{background:var(--surface2);}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+.btn.primary:hover{background:#122a42;}
+.btn.danger{background:var(--red-bg);color:var(--red);border-color:var(--red);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;}
+
+/* ── UNIT BAR ── */
+.unit-bar{display:flex;gap:0;border:1px solid var(--border2);border-radius:3px;overflow:hidden;width:fit-content;margin-bottom:14px;}
+.unit-bar button{font-family:var(--mono);font-size:11px;padding:5px 14px;border:none;background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+.unit-bar button.active{background:var(--text);color:var(--bg);}
+
+/* ── RES GRID ── */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:14px;}
+.res-card{background:var(--surface2);border-radius:3px;padding:10px 12px;}
+.res-label{font-size:10px;color:var(--muted);letter-spacing:0.04em;margin-bottom:5px;}
+.res-val{font-family:var(--serif);font-weight:300;font-size:22px;color:var(--text);line-height:1.1;}
+.res-unit{font-size:10px;font-family:var(--mono);color:var(--muted);margin-left:3px;}
+
+/* ── BADGE ── */
+.badge{display:inline-block;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-left:6px;vertical-align:middle;}
+.b-green{background:var(--green-bg);color:var(--green);}
+.b-amber{background:var(--amber-bg);color:var(--amber);}
+.b-red{background:var(--red-bg);color:var(--red);}
+.b-navy{background:var(--navy-bg);color:var(--navy);}
+
+/* ── CANVAS ── */
+canvas{width:100%;display:block;border-radius:3px;background:var(--surface2);}
+.view-toggle{display:flex;gap:0;border:1px solid var(--border2);border-radius:3px;overflow:hidden;width:fit-content;}
+.view-toggle button{font-family:var(--mono);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;padding:5px 14px;border:none;background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+.view-toggle button.active{background:var(--text);color:var(--bg);}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:8px;}
+.legend span{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:10px;height:10px;border-radius:1px;display:inline-block;}
+
+/* ── TWO-COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:640px){.two-col{grid-template-columns:1fr;} header{padding:18px 16px;} .tabbar{padding:0 12px;} main{padding:16px 12px 40px;}}
+
+/* ── FIELD ROW ── */
+.field-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.field-row label{font-size:11px;color:var(--muted);min-width:160px;line-height:1.4;}
+.field-row input,.field-row select{width:90px;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;}
+.field-row input:focus{outline:none;border-color:var(--navy);}
+.unit-lbl{font-size:10px;color:var(--muted);}
+
+/* ── ERRORS TABLE ── */
+table.err-table{width:100%;border-collapse:collapse;font-size:12px;}
+table.err-table th{background:var(--surface2);color:var(--muted);padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--border);}
+table.err-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6;}
+table.err-table tr:last-child td{border-bottom:none;}
+table.err-table .err-num{font-weight:500;color:var(--red);width:28px;}
+table.err-table .err-type{font-size:10px;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);width:90px;}
+
+/* ── THEORY BOXES ── */
+.cb{padding:12px 15px;border-radius:4px;margin-bottom:12px;border-left:4px solid;}
+.cb.blue{background:var(--navy-bg);border-color:var(--navy);}
+.cb.green{background:var(--green-bg);border-color:var(--green);}
+.cb.gold{background:var(--gold-bg);border-color:var(--gold);}
+.cb.red{background:var(--red-bg);border-color:var(--red);}
+.cb h4{font-family:var(--serif);font-size:13px;font-weight:600;margin-bottom:6px;}
+.cb p,.cb ul{font-size:12px;line-height:1.8;color:var(--muted);}
+.cb ul{padding-left:16px;}
+
+/* ── ANALOGY BOX ── */
+.analogy{background:linear-gradient(135deg,#fffbea,#fff3cd);border:1.5px solid #f5c518;border-radius:10px;padding:14px 18px;margin:10px 0 16px;box-shadow:0 3px 12px rgba(245,197,24,.15);transition:transform .2s,box-shadow .2s;}
+.analogy:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,197,24,.22);}
+.analogy-tag{display:inline-flex;align-items:center;gap:5px;background:#f5c518;color:#3a2800;font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:3px;margin-bottom:8px;}
+.analogy h5{font-size:13.5px;font-weight:700;color:#7a4f00;margin-bottom:6px;}
+.analogy p{font-size:13px;color:#5a3c00;line-height:1.65;}
+.analogy .ex-row{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+.analogy .ex-item{flex:1;min-width:155px;background:rgba(255,255,255,.8);border-radius:6px;padding:8px 12px;border:1px solid #f0d060;}
+.analogy .ex-item strong{display:block;color:#7a4f00;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:700;}
+.analogy .ex-item span{font-size:13px;color:#5a3c00;line-height:1.5;}
+
+/* ── COLLAPSIBLE ── */
+.collapsible{border:1px solid var(--border);border-radius:4px;margin-bottom:10px;overflow:hidden;}
+.coll-header{padding:10px 15px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--surface2);font-size:12px;font-weight:500;}
+.coll-header:hover{background:var(--surface3);}
+.coll-arrow{font-size:11px;transition:transform .3s;color:var(--muted);}
+.collapsible.open .coll-arrow{transform:rotate(180deg);}
+.coll-body{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+.collapsible.open .coll-body{max-height:3000px;}
+.coll-inner{padding:14px 15px;}
+
+/* ── OUTPUT MAP ── */
+#om-svg-container{min-width:400px;overflow-x:auto;}
+
+/* ── OUTPUT MAP SETTINGS ── */
+.om-settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 20px;margin-bottom:16px;}
+.om-field{display:flex;flex-direction:column;gap:4px;}
+.om-field label{font-size:11px;color:var(--muted);}
+.om-field input,.om-field select{width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;color:var(--text);}
+.om-field input:focus{outline:none;border-color:var(--navy);}
+
+/* ── BEARING CALC ── */
+.bearing-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:10px;}
+@media(max-width:500px){.bearing-row{grid-template-columns:1fr;}}
+
+footer{text-align:center;padding:18px;font-size:10px;color:var(--muted);letter-spacing:0.05em;border-top:1px solid var(--border);margin-top:20px;}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+
+<header>
+  <div id="particles-hdr"></div>
+  <div class="hdr-top">
+    <div>
+      <h1>Prismatic Compass — <em>Radiation</em> <span>Method</span></h1>
+      <p class="hdr-sub">Field notebook · Radiation plot · Area · Bearing conversions · Errors · Output map</p>
+    </div>
+    <div class="hdr-meta">BHU Campus Survey<br>VS25 · Surveying Methods</div>
+  </div>
+</header>
+
+<div class="tabbar">
+  <button class="active" onclick="switchTab('notebook',this)">① Field Notebook</button>
+  <button onclick="switchTab('plot',this)">② Radiation Plot</button>
+  <button onclick="switchTab('bearings',this)">③ Bearing Calc</button>
+  <button onclick="switchTab('theory',this)">④ Theory</button>
+  <button onclick="switchTab('errors',this)">⑤ Errors</button>
+  <button onclick="switchTab('outputmap',this)">⑥ Output Map</button>
+</div>
+
+<main>
+
+<!-- ═══ TAB 1 — FIELD NOTEBOOK ═══ -->
+<div id="panel-notebook" class="panel active">
+  <div class="card">
+    <div class="card-head">
+      <h2>Field <em>Note Book</em></h2>
+      <span class="sub">Station O · Bearing from N · Distance to object</span>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <strong>Radiation Method:</strong> Set up the prismatic compass at one fixed base station <strong>O</strong>. Sight each object point, record its <em>bearing from North (WCB, 0–360°)</em> and the measured <em>distance</em> from O. The field map is plotted by drawing each ray at its bearing and marking the point at the scaled distance.
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);">Unit:</span>
+        <div class="unit-bar">
+          <button id="ubtn-ft" class="active" onclick="setUnit('ft',this)">Feet</button>
+          <button id="ubtn-m" onclick="setUnit('m',this)">Metres</button>
+        </div>
+        <span style="font-size:11px;color:var(--muted);">Base station label:</span>
+        <input type="text" id="stn-o" value="O" style="width:60px;padding:4px 8px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:11px;" oninput="renderNotebook()">
+      </div>
+
+      <div class="nb-wrap">
+        <table class="nb" id="nb-table">
+          <thead>
+            <tr>
+              <th class="stn-h" style="width:60px;">Point</th>
+              <th class="brg-h" style="width:100px;">Bearing (°)<br><span style="font-weight:400;font-size:9px;">WCB from N</span></th>
+              <th class="len-h" style="width:100px;">Distance<br><span style="font-weight:400;font-size:9px;" id="len-unit-head">ft</span></th>
+              <th class="base-h" style="width:120px;font-size:9px;">Note / Feature</th>
+              <th class="base-h" style="width:28px;"></th>
+            </tr>
+          </thead>
+          <tbody id="nb-body"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" style="background:var(--surface2);padding:8px 10px;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.04em;">
+                Radiation Method — all rays measured from single base station O
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="addRow()">+ Add point</button>
+        <button class="btn" onclick="loadBHU()">Load BHU data (Radiation)</button>
+        <button class="btn danger" onclick="clearAll()">Clear all</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 2 — RADIATION PLOT ═══ -->
+<div id="panel-plot" class="panel">
+  <div class="card">
+    <div class="card-head">
+      <h2>Radiation <em>Plot</em></h2>
+      <span class="sub">All rays from base station O · Polygon boundary</span>
+    </div>
+    <div class="card-body">
+      <div class="formula">
+        Each point P is plotted at: x = O_x + d·sin(θ) &nbsp;&nbsp; y = O_y + d·cos(θ)<br>
+        where θ = WCB bearing, d = distance from O. Boundary is formed by joining adjacent ray-tips in bearing order.
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div class="view-toggle">
+          <button id="vbtn-survey" class="active" onclick="setView('survey',this)">Survey view</button>
+          <button id="vbtn-clean" onclick="setView('clean',this)">Clean map</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);">
+          Scale 1cm =
+          <input type="number" id="plot-scale" value="10" min="1" step="1" style="width:60px;padding:4px 6px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:12px;" oninput="drawPlot()">
+          <span id="plot-unit-lbl">ft</span>
+        </div>
+      </div>
+      <canvas id="plot-canvas" height="600"></canvas>
+      <div class="legend">
+        <span><span class="leg-dot" style="background:var(--navy);"></span>Ray lines (bearing+dist)</span>
+        <span><span class="leg-dot" style="background:var(--green);"></span>Boundary polygon</span>
+        <span><span class="leg-dot" style="background:var(--gold);"></span>Object points</span>
+        <span><span class="leg-dot" style="background:#1c1a16;"></span>Base station O</span>
+      </div>
+      <div class="res-grid" id="plot-stats" style="margin-top:16px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 3 — BEARING CALCULATORS ═══ -->
+<div id="panel-bearings" class="panel">
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><h2>FB ↔ BB <em>Converter</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          If FB &lt; 180° → BB = FB + 180°<br>
+          If FB &gt; 180° → BB = FB − 180°<br>
+          Ideal difference = 180° (free from local attraction)
+        </div>
+        <div class="field-row"><label>Fore Bearing (FB)</label><input type="number" id="fb-in" value="60.5" step="0.0167" oninput="calcFBBB()"><span class="unit-lbl">°</span></div>
+        <div class="res-grid" id="fbbb-results"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>WCB ↔ QB <em>Converter</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          WCB → QB: find quadrant, convert angle<br>
+          QB → WCB: add quadrant offset<br>
+          N→NE: 0–90°, SE: 90–180°, SW: 180–270°, NW: 270–360°
+        </div>
+        <div class="field-row"><label>Input WCB (°)</label><input type="number" id="wcb-in" value="122" step="0.01" oninput="calcWCBQB()"><span class="unit-lbl">°</span></div>
+        <div class="res-grid" id="wcbqb-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head"><h2>Interior Angle <em>Calculator</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          Included angle = BB of previous line − FB of next line<br>
+          If result &lt; 0 → add 360°<br>
+          Check: Sum of interior angles = (2n−4)×90°
+        </div>
+        <div id="angle-rows">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:11px;color:var(--muted);">
+            <span style="min-width:40px;">Line</span><span style="min-width:90px;">FB (°)</span><span style="min-width:90px;">BB (°)</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="addAngleRow()">+ Add line</button>
+          <button class="btn primary" onclick="calcAngles()">Calculate</button>
+        </div>
+        <div id="angle-results" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Local Attraction <em>Correction</em></h2></div>
+      <div class="card-body">
+        <div class="formula">
+          Check: |FB − BB| = 180° → station free from local attraction<br>
+          Error at station = Corrected BB − Observed BB<br>
+          Apply same correction to all bearings at that station
+        </div>
+        <div class="field-row"><label>Observed FB of line</label><input type="number" id="la-fb" value="45.75" step="0.01" oninput="calcLA()"><span class="unit-lbl">°</span></div>
+        <div class="field-row"><label>Observed BB of line</label><input type="number" id="la-bb" value="226.17" step="0.01" oninput="calcLA()"><span class="unit-lbl">°</span></div>
+        <div class="field-row"><label>Known correct FB</label><input type="number" id="la-cfb" value="45.75" step="0.01" oninput="calcLA()"><span class="unit-lbl">°</span></div>
+        <div class="res-grid" id="la-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Radiation Area <em>(Shoelace from O)</em></h2></div>
+    <div class="card-body">
+      <div class="formula">
+        Area of polygon with rays from O = ½ Σ |d_i × d_{i+1} × sin(θ_{i+1} − θ_i)|<br>
+        where d = distances, θ = bearings in ascending order
+      </div>
+      <div class="res-grid" id="area-results"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ TAB 4 — THEORY ═══ -->
+<div id="panel-theory" class="panel">
+
+  <div class="card">
+    <div class="card-head"><h2>Prismatic Compass — <em>Core Theory</em></h2></div>
+    <div class="card-body">
+
+      <div class="cb blue">
+        <h4>What is a Prismatic Compass?</h4>
+        <p>The most convenient and portable form of magnetic compass — can be hand-held or fitted on a tripod. It uses Earth's magnetic field to give <strong>directly magnetic bearings</strong> of lines. A prism and sighting slit define the line of sight; the prism enables simultaneous viewing of the graduated compass card and the distant object.</p>
+      </div>
+      <div class="analogy">
+        <span class="analogy-tag">💡 Daily Life Analogy</span>
+        <h5>Prismatic Compass = Google Maps compass on steroids</h5>
+        <p>Your phone compass tells you which direction you're facing — but you can only read it separately from what you're looking at. The prismatic compass is like a phone that shows your facing direction and the target object in the <em>same eyepiece simultaneously</em>, like the AR navigation arrows in Google Maps overlaid on the camera view.</p>
+        <div class="ex-row">
+          <div class="ex-item"><strong>Prism</strong><span>The AR overlay in your phone camera — bends the reading to your eye while you sight the target.</span></div>
+          <div class="ex-item"><strong>Magnetic needle</strong><span>GPS signal — always points to true reference regardless of where you walk.</span></div>
+          <div class="ex-item"><strong>Graduated ring</strong><span>The compass rose on Google Maps — 0° to 360° painted on the ring.</span></div>
+        </div>
+      </div>
+
+      <div class="cb green">
+        <h4>Radiation Method — How it works</h4>
+        <ul>
+          <li>Set up compass at ONE fixed base station O</li>
+          <li>Sight each boundary/object point; read its WCB bearing</li>
+          <li>Measure distance O→point with chain/tape</li>
+          <li>In office: draw N-line at O, plot each ray at its bearing, mark distance to scale</li>
+          <li>Join ray tips in order → survey map</li>
+          <li>Suitable for <strong>small, open, levelled areas</strong></li>
+        </ul>
+      </div>
+      <div class="analogy">
+        <span class="analogy-tag">💡 Daily Life Analogy</span>
+        <h5>Radiation = Lighthouse beam sweeping the harbour</h5>
+        <p>A lighthouse at one fixed point (O) sweeps its beam to every ship in the harbour. Each ship is like your object point — the angle of the beam when it hits the ship is the bearing, and the distance is how far the light travels. Your survey map is the harbour chart drawn from the lighthouse's perspective.</p>
+        <div class="ex-row">
+          <div class="ex-item"><strong>Base station O</strong><span>The lighthouse — one fixed position controls everything.</span></div>
+          <div class="ex-item"><strong>Bearing</strong><span>The angle of the beam when it illuminates each ship.</span></div>
+          <div class="ex-item"><strong>Distance</strong><span>The length of the light beam to each ship.</span></div>
+          <div class="ex-item"><strong>Ray</strong><span>The actual beam of light drawn on the chart.</span></div>
+        </div>
+      </div>
+
+      <div class="collapsible" id="coll-bearing">
+        <div class="coll-header" onclick="toggleColl('bearing')">
+          <h4>Bearing Systems — WCB vs QB</h4><span class="coll-arrow">▼</span>
+        </div>
+        <div class="coll-body"><div class="coll-inner">
+          <div class="two-col" style="gap:12px;">
+            <div class="cb blue">
+              <h4>WCB (Whole Circle Bearing)</h4>
+              <p>Angle measured clockwise from North, 0° to 360°. Used in prismatic compass. Example: S45°W = 225° WCB.</p>
+            </div>
+            <div class="cb gold">
+              <h4>QB (Quadrantal Bearing)</h4>
+              <p>Angle from N or S towards E or W, 0°–90°. Used in surveyor's compass. Example: N60°E, S30°W. Must convert to WCB for calculations.</p>
+            </div>
+          </div>
+          <table class="err-table" style="margin-top:10px;">
+            <thead><tr><th>Quadrant</th><th>WCB Range</th><th>QB Form</th><th>Conversion</th></tr></thead>
+            <tbody>
+              <tr><td>NE</td><td>0°–90°</td><td>N θ E</td><td>WCB = QB</td></tr>
+              <tr><td>SE</td><td>90°–180°</td><td>S (180−θ) E</td><td>WCB = 180°−QB</td></tr>
+              <tr><td>SW</td><td>180°–270°</td><td>S θ W</td><td>WCB = 180°+QB</td></tr>
+              <tr><td>NW</td><td>270°–360°</td><td>N (360−θ) W</td><td>WCB = 360°−QB</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <div class="collapsible open" id="coll-proc">
+        <div class="coll-header" onclick="toggleColl('proc')">
+          <h4>Field Procedure (Step by Step)</h4><span class="coll-arrow">▼</span>
+        </div>
+        <div class="coll-body"><div class="coll-inner">
+          <ol style="font-size:12px;line-height:2;color:var(--muted);padding-left:18px;">
+            <li>Make a reconnaissance and select base station O in the centre of the area</li>
+            <li>Centre compass over O using plumb bob or string</li>
+            <li>Level by adjusting tripod legs so needle swings freely</li>
+            <li>Focus prism by moving up/down on focusing stud</li>
+            <li>Release needle only when compass is approximately in magnetic meridian</li>
+            <li>Sight object A — align object vane, hair, and eye vane</li>
+            <li>Read bearing from prism (avoid parallax — look along needle, not across)</li>
+            <li>Measure distance OA with chain/tape</li>
+            <li>Tap compass gently before reading to overcome pivot friction</li>
+            <li>Record bearing and distance in field notebook</li>
+            <li>Repeat for all object points B, C, D, E… in sequence</li>
+            <li>Take duplicate readings at important stations</li>
+          </ol>
+        </div></div>
+      </div>
+
+      <div class="collapsible" id="coll-methods">
+        <div class="coll-header" onclick="toggleColl('methods')">
+          <h4>Three Methods — Radiation vs Triangulation vs Traverse</h4><span class="coll-arrow">▼</span>
+        </div>
+        <div class="coll-body"><div class="coll-inner">
+          <table class="err-table">
+            <thead><tr><th>Method</th><th>Best for</th><th>Base stations</th><th>Key feature</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Radiation</strong></td><td>Small, open, levelled areas</td><td>1 (fixed O)</td><td>All rays from one point</td></tr>
+              <tr><td><strong>Triangulation</strong></td><td>Large distances, obstacles</td><td>2+</td><td>Rays from 2 stations intersect</td></tr>
+              <tr><td><strong>Traverse (closed)</strong></td><td>Roads, fields, large areas</td><td>Multiple</td><td>Chain of base lines, polygon closes</td></tr>
+              <tr><td><strong>Traverse (open)</strong></td><td>Roads, rivers, routes</td><td>Multiple</td><td>Start ≠ end station</td></tr>
+            </tbody>
+          </table>
+          <div class="analogy" style="margin-top:12px;">
+            <span class="analogy-tag">💡 Daily Life Analogy</span>
+            <h5>Three methods = three ways to map your BHU hostel corridor</h5>
+            <p>Radiation: stand at the corridor junction (O) and measure distance + direction to every room door. Triangulation: stand at two ends and note which direction each door is from both ends — intersection gives position. Traverse: walk from Room 1 to Room 2 to Room 3, recording each step's direction and length.</p>
+          </div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 5 — ERRORS ═══ -->
+<div id="panel-errors" class="panel">
+  <div class="card">
+    <div class="card-head"><h2>Errors in <em>Prismatic Compass Survey</em></h2><span class="sub">Instrumental · Personal · Natural</span></div>
+    <div class="card-body">
+      <table class="err-table">
+        <thead><tr><th>#</th><th>Type</th><th>Error / Cause</th><th>Remedy</th></tr></thead>
+        <tbody id="errors-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Precautions <em>Checklist</em></h2><span class="sub">Click to tick off before fieldwork</span></div>
+    <div class="card-body">
+      <ul id="precautions-list" style="list-style:none;padding:0;font-size:12px;line-height:2.2;"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 6 — OUTPUT MAP ═══ -->
+<div id="panel-outputmap" class="panel">
+  <div class="card">
+    <div class="card-head">
+      <h2>Output <em>Survey Map</em></h2>
+      <span class="sub">Publication-quality downloadable radiation map</span>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <strong>Map settings:</strong> Fill in details below, then click <em>Generate Map</em>. Downloads as <strong>SVG</strong> (print-ready vector) or <strong>PNG</strong> (for reports/Word).
+      </div>
+      <div class="om-settings">
+        <div class="om-field"><label>Survey title</label><input type="text" id="om-title" value="BHU Campus — Radiation Survey"></div>
+        <div class="om-field"><label>Surveyor name</label><input type="text" id="om-surveyor" value="Rahul Kumar Patel"></div>
+        <div class="om-field"><label>Date</label><input type="text" id="om-date" value="BHU Field, 2026"></div>
+        <div class="om-field"><label>Department / Institute</label><input type="text" id="om-dept" value="Dept. of Civil Engineering, BHU"></div>
+        <div class="om-field" style="max-width:160px;"><label>Scale (1 unit = ? px)</label><input type="number" id="om-scale" value="5" min="1" max="30" step="0.5"></div>
+        <div class="om-field" style="max-width:120px;"><label>Show rays</label><select id="om-rays"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+        <div class="om-field" style="max-width:120px;"><label>Show labels</label><select id="om-labels"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+        <div class="om-field" style="max-width:120px;"><label>Show grid</label><select id="om-grid"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="generateOutputMap()">⬛ Generate Map</button>
+        <button class="btn" id="om-dl-svg" style="display:none;" onclick="downloadSVG()">↓ Download SVG</button>
+        <button class="btn" id="om-dl-png" style="display:none;" onclick="downloadPNG()">↓ Download PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="om-preview-card" style="display:none;">
+    <div class="card-head"><h2>Map <em>Preview</em></h2><span class="sub" id="om-preview-meta"></span></div>
+    <div class="card-body" style="padding:8px;overflow-x:auto;background:#f0ece1;">
+      <div id="om-svg-container"></div>
+    </div>
+  </div>
+
+  <div class="card" id="om-summary-card" style="display:none;">
+    <div class="card-head"><h2>Survey <em>Summary Table</em></h2></div>
+    <div class="card-body"><div id="om-summary-content"></div></div>
+  </div>
+</div>
+
+</main>
+<footer>Prismatic Compass — Radiation Method Field Tool · BHU · VS25 Syllabus</footer>
+
+<script>
+// ════════════════════════════════
+// DATA
+// ════════════════════════════════
+let rows = [];
+let currentUnit = 'ft';
+let currentView = 'survey';
+
+// BHU Radiation Method data from field notebook
+function getBHU(){
+  return [
+    {pt:'A',  brg:0,   dist:62.94, note:'0° N'},
+    {pt:'X',  brg:35,  dist:63.75, note:'35° from N'},
+    {pt:'C',  brg:61,  dist:56.30, note:'61° from N'},
+    {pt:'Z',  brg:103, dist:53.33, note:'103° from N'},
+    {pt:'D',  brg:121, dist:48.08, note:'121° from N'},
+    {pt:'E',  brg:170, dist:65.10, note:'170° from N'},
+    {pt:'Y',  brg:195, dist:65.83, note:'195° from N'},
+    {pt:'F',  brg:249, dist:63.88, note:'249° from N'},
+    {pt:'G',  brg:305, dist:41.58, note:'305° from N'},
+    {pt:'B',  brg:45,  dist:65.71, note:'45° from N'},
+  ].sort((a,b)=>a.brg-b.brg);
+}
+
+// ════════════════════════════════
+// NOTEBOOK
+// ════════════════════════════════
+let _plotTimer = null;
+function schedPlot(){ clearTimeout(_plotTimer); _plotTimer = setTimeout(()=>{ drawPlot(); calcAreaResults(); },300); }
+
+function renderNotebook(){
+  const sorted = [...rows].sort((a,b)=>a.brg-b.brg);
+  const tbody = document.getElementById('nb-body');
+  const stnO = document.getElementById('stn-o').value||'O';
+  const u = currentUnit;
+  document.getElementById('len-unit-head').textContent = u;
+
+  tbody.innerHTML = '';
+  // header station row
+  const topRow = document.createElement('tr');
+  topRow.innerHTML = `<td colspan="5" style="background:#1a3d5255;color:var(--navy);font-size:10px;font-weight:500;letter-spacing:.04em;text-align:center;padding:5px;">Base Station: ${stnO} — All bearings measured from Magnetic North (WCB)</td>`;
+  tbody.appendChild(topRow);
+
+  sorted.forEach((row)=>{
+    const ri = rows.indexOf(row);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="inp-stn" value="${row.pt||''}" placeholder="A"
+        oninput="rows[${ri}].pt=this.value"
+        onblur="rows[${ri}].pt=this.value;renderNotebook()"></td>
+      <td><input type="number" class="inp-brg" value="${row.brg||''}" placeholder="0" step="0.5" min="0" max="360"
+        oninput="rows[${ri}].brg=parseFloat(this.value)||0;schedPlot()"
+        onblur="rows[${ri}].brg=parseFloat(this.value)||0;renderNotebook();schedPlot()"></td>
+      <td><input type="number" class="inp-len" value="${row.dist||''}" placeholder="0" step="0.1" min="0"
+        oninput="rows[${ri}].dist=parseFloat(this.value)||0;schedPlot()"
+        onblur="rows[${ri}].dist=parseFloat(this.value)||0;renderNotebook();schedPlot()"></td>
+      <td class="note-cell"><input type="text" class="inp-note" value="${row.note||''}" placeholder="feature"
+        oninput="rows[${ri}].note=this.value"
+        onblur="rows[${ri}].note=this.value;renderNotebook()"></td>
+      <td><button class="del-btn" onclick="deleteRow(${ri})">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addRow(){
+  rows.push({pt:'?', brg:0, dist:0, note:''});
+  renderNotebook(); schedPlot();
+}
+function deleteRow(i){ if(rows.length>1){rows.splice(i,1);renderNotebook();schedPlot();} }
+function clearAll(){ rows=[{pt:'A',brg:0,dist:50,note:''},{pt:'B',brg:90,dist:50,note:''}]; renderNotebook();schedPlot(); }
+function loadBHU(){ rows=getBHU(); currentUnit='ft'; document.getElementById('ubtn-ft').classList.add('active'); document.getElementById('ubtn-m').classList.remove('active'); document.getElementById('plot-unit-lbl').textContent='ft'; renderNotebook();schedPlot(); }
+function setUnit(u,el){ currentUnit=u; document.querySelectorAll('.unit-bar button').forEach(b=>b.classList.remove('active')); el.classList.add('active'); document.getElementById('plot-unit-lbl').textContent=u; renderNotebook();schedPlot(); }
+function setView(v,el){ currentView=v; document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.remove('active')); el.classList.add('active'); drawPlot(); }
+function switchTab(name,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active'); el.classList.add('active');
+  if(name==='plot') drawPlot();
+  if(name==='bearings'){ calcFBBB();calcWCBQB();calcLA();calcAreaResults(); }
+  if(name==='outputmap') generateOutputMap();
+}
+
+// ════════════════════════════════
+// RADIATION PLOT
+// ════════════════════════════════
+function drawPlot(){
+  const canvas = document.getElementById('plot-canvas');
+  if(!canvas) return;
+  const DPR = window.devicePixelRatio||1;
+  const W = canvas.offsetWidth||800;
+  const H = 600;
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+
+  const pts = [...rows].sort((a,b)=>a.brg-b.brg);
+  if(pts.length < 1) return;
+  const u = currentUnit;
+  const mf = 'DM Mono, monospace';
+
+  // Convert polar to cartesian (North = up, bearing CW from N)
+  const toXY = (brg,dist) => ({
+    x: dist * Math.sin(brg * Math.PI/180),
+    y: -dist * Math.cos(brg * Math.PI/180)  // negative because SVG y-down
+  });
+
+  const cartPts = pts.map(p=>({...p, ...toXY(p.brg, p.dist)}));
+
+  const padL=70, padR=70, padT=50, padB=50;
+  const drawW=W-padL-padR, drawH=H-padT-padB;
+
+  const allX = [0, ...cartPts.map(p=>p.x)];
+  const allY = [0, ...cartPts.map(p=>p.y)];
+  const xMin=Math.min(...allX)-8, xMax=Math.max(...allX)+8;
+  const yMin=Math.min(...allY)-8, yMax=Math.max(...allY)+8;
+  const xR=xMax-xMin, yR=yMax-yMin;
+  const sc = Math.min(drawW/xR, drawH/yR);
+  const ox = padL + (drawW - xR*sc)/2 - xMin*sc;
+  const oy = padT + (drawH - yR*sc)/2 - yMin*sc;
+
+  function cx(x){ return ox + x*sc; }
+  function cy(y){ return oy + y*sc; }
+
+  // Grid
+  if(true){
+    ctx.strokeStyle='#e4e0d6'; ctx.lineWidth=0.5;
+    const gstep = Math.pow(10, Math.floor(Math.log10(Math.max(xR,yR)/6)));
+    const gxs = Math.ceil(xMin/gstep)*gstep;
+    for(let x=gxs;x<=xMax;x+=gstep){
+      ctx.beginPath();ctx.moveTo(cx(x),padT);ctx.lineTo(cx(x),H-padB);ctx.stroke();
+    }
+    const gys = Math.ceil(yMin/gstep)*gstep;
+    for(let y=gys;y<=yMax;y+=gstep){
+      ctx.beginPath();ctx.moveTo(padL,cy(y));ctx.lineTo(W-padR,cy(y));ctx.stroke();
+    }
+  }
+
+  // Polygon fill (boundary by joining ray tips in bearing order)
+  if(cartPts.length >= 3){
+    ctx.beginPath();
+    cartPts.forEach((p,i)=>{ i===0?ctx.moveTo(cx(p.x),cy(p.y)):ctx.lineTo(cx(p.x),cy(p.y)); });
+    ctx.closePath();
+    ctx.fillStyle='rgba(45,90,100,0.08)'; ctx.fill();
+    ctx.strokeStyle='#2d5a6a'; ctx.lineWidth=1.8; ctx.setLineDash([5,3]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // North arrow
+  const nax=W-padR+22, nay=padT+16;
+  ctx.beginPath(); ctx.moveTo(nax,nay+28); ctx.lineTo(nax,nay);
+  ctx.strokeStyle='#1c1a16'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(nax-5,nay+10); ctx.lineTo(nax,nay); ctx.lineTo(nax+5,nay+10); ctx.fill();
+  ctx.fillStyle='#1c1a16'; ctx.font=`bold 11px ${mf}`; ctx.textAlign='center'; ctx.fillText('N',nax,nay+42);
+
+  // N-line through O (light)
+  ctx.beginPath(); ctx.moveTo(cx(0),cy(0)); ctx.lineTo(cx(0),padT);
+  ctx.strokeStyle='#ccbbaa'; ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Ray lines + labels
+  cartPts.forEach(p=>{
+    const ox2=cx(0), oy2=cy(0), px=cx(p.x), py=cy(p.y);
+    if(currentView==='survey'){
+      ctx.beginPath(); ctx.moveTo(ox2,oy2); ctx.lineTo(px,py);
+      ctx.strokeStyle='#1a3a5c55'; ctx.lineWidth=1; ctx.setLineDash([4,2]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // object dot
+    ctx.fillStyle='#b5860d'; ctx.beginPath(); ctx.arc(px,py,4,0,2*Math.PI); ctx.fill();
+    // label
+    const lx = px + (p.x>=0?8:-8);
+    const textAlign = p.x>=0?'left':'right';
+    ctx.fillStyle='#1a1814'; ctx.font=`10px ${mf}`; ctx.textAlign=textAlign;
+    ctx.fillText(p.pt, lx, py-5);
+    if(currentView==='survey'){
+      ctx.fillStyle='#7a7468'; ctx.font=`8px ${mf}`;
+      ctx.fillText(`${p.brg}°`, lx, py+7);
+      ctx.fillText(`${p.dist}${u}`, lx, py+17);
+    }
+  });
+
+  // Green boundary line on top
+  if(cartPts.length >= 2){
+    ctx.beginPath();
+    cartPts.forEach((p,i)=>{ i===0?ctx.moveTo(cx(p.x),cy(p.y)):ctx.lineTo(cx(p.x),cy(p.y)); });
+    ctx.closePath();
+    ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+  }
+
+  // Base station O
+  ctx.fillStyle='#1c1a16'; ctx.beginPath(); ctx.arc(cx(0),cy(0),6,0,2*Math.PI); ctx.fill();
+  ctx.fillStyle='#f7f4ee'; ctx.font=`bold 9px ${mf}`; ctx.textAlign='center'; ctx.fillText('O',cx(0),cy(0)+3.5);
+
+  // Scale indicator
+  const scaleVal = parseFloat(document.getElementById('plot-scale').value)||10;
+  ctx.fillStyle='#7a7468'; ctx.font=`9px ${mf}`; ctx.textAlign='right';
+  ctx.fillText(`Scale 1cm = ${scaleVal} ${u}`, W-padR, padT-14);
+  ctx.fillStyle='#1c1a16'; ctx.font=`500 10px ${mf}`; ctx.textAlign='left';
+  ctx.fillText('Radiation Plot — Prismatic Compass Survey', padL, padT-14);
+
+  // Stats
+  const area = computeArea(pts);
+  document.getElementById('plot-stats').innerHTML =
+    rcard('Points plotted', pts.length, '')+
+    rcard('Computed area', fmt(area,1), u+'²')+
+    rcard('Max bearing', fmt(Math.max(...pts.map(p=>p.brg)),1),'°')+
+    rcard('Max distance', fmt(Math.max(...pts.map(p=>p.dist)),2), u);
+}
+
+// ════════════════════════════════
+// AREA
+// ════════════════════════════════
+function computeArea(pts){
+  const sorted = [...pts].sort((a,b)=>a.brg-b.brg);
+  let area = 0;
+  for(let i=0;i<sorted.length;i++){
+    const j=(i+1)%sorted.length;
+    const di=sorted[i].dist, dj=sorted[j].dist;
+    const dTheta=(sorted[j].brg-sorted[i].brg)*Math.PI/180;
+    area += 0.5*di*dj*Math.sin(dTheta);
+  }
+  return Math.abs(area);
+}
+
+function calcAreaResults(){
+  const pts = [...rows].sort((a,b)=>a.brg-b.brg);
+  if(pts.length<3){ document.getElementById('area-results').innerHTML='<p style="font-size:11px;color:var(--muted);">Need at least 3 points.</p>'; return; }
+  const u=currentUnit, u2=u==='ft'?'ft²':'m²';
+  const area=computeArea(pts);
+  const maxD=Math.max(...pts.map(p=>p.dist));
+  const minD=Math.min(...pts.map(p=>p.dist));
+  document.getElementById('area-results').innerHTML=
+    rcard('Area (triangles from O)',fmt(area,2),u2)+
+    rcard('Points',pts.length,'')+
+    rcard('Max distance',fmt(maxD,2),u)+
+    rcard('Min distance',fmt(minD,2),u);
+}
+
+// ════════════════════════════════
+// BEARING CALCULATORS
+// ════════════════════════════════
+function calcFBBB(){
+  const fb=parseFloat(document.getElementById('fb-in').value)||0;
+  const bb=fb<180?fb+180:fb-180;
+  const diff=Math.abs(fb-bb);
+  const status = Math.abs(diff-180)<0.1 ? 'Free from local attraction' : 'Check for local attraction';
+  const bc = Math.abs(diff-180)<0.1 ? 'b-green' : 'b-amber';
+  document.getElementById('fbbb-results').innerHTML=
+    rcard('Back Bearing',fmt(bb,4),'°')+
+    rcard('FB−BB',fmt(diff,4),'°',status,bc);
+}
+
+function calcWCBQB(){
+  const wcb=parseFloat(document.getElementById('wcb-in').value)||0;
+  let qb='', qbDesc='';
+  const w=((wcb%360)+360)%360;
+  if(w<=90)      { qb=`N ${fmt(w,2)}° E`;      qbDesc='NE quadrant'; }
+  else if(w<=180){ qb=`S ${fmt(180-w,2)}° E`;  qbDesc='SE quadrant'; }
+  else if(w<=270){ qb=`S ${fmt(w-180,2)}° W`;  qbDesc='SW quadrant'; }
+  else           { qb=`N ${fmt(360-w,2)}° W`;  qbDesc='NW quadrant'; }
+  document.getElementById('wcbqb-results').innerHTML=
+    rcard('QB',qb,'')+
+    rcard('Quadrant',qbDesc,'')+
+    rcard('WCB (check)',fmt(w,2),'°');
+}
+
+function calcLA(){
+  const fb=parseFloat(document.getElementById('la-fb').value)||0;
+  const bb=parseFloat(document.getElementById('la-bb').value)||0;
+  const cfb=parseFloat(document.getElementById('la-cfb').value)||0;
+  const diff=Math.abs(fb-bb);
+  const ideal=Math.abs(diff-180);
+  const cbb=cfb<180?cfb+180:cfb-180;
+  const errAtFwd=cfb-fb;
+  const errAtBk=cbb-bb;
+  const status=ideal<0.5?'Free':'Affected';
+  const bc=ideal<0.5?'b-green':'b-red';
+  document.getElementById('la-results').innerHTML=
+    rcard('|FB−BB|',fmt(diff,3),'°',status,bc)+
+    rcard('Corrected BB',fmt(cbb,3),'°')+
+    rcard('Error at fwd stn',fmt(errAtFwd,3),'°')+
+    rcard('Error at bk stn',fmt(errAtBk,3),'°');
+}
+
+// ════════════════════════════════
+// INTERIOR ANGLES
+// ════════════════════════════════
+let angleRows=[{line:'AB',fb:60.5,bb:240.5},{line:'BC',fb:122,bb:302},{line:'CD',fb:46,bb:226},{line:'DE',fb:205.5,bb:25.5},{line:'EA',fb:300,bb:120}];
+
+function renderAngleRows(){
+  const container=document.getElementById('angle-rows');
+  container.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:11px;color:var(--muted);"><span style="min-width:55px;">Line</span><span style="min-width:90px;">FB (°)</span><span style="min-width:90px;">BB (°)</span></div>`;
+  angleRows.forEach((r,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:5px;';
+    d.innerHTML=`
+      <input type="text" value="${r.line}" style="width:55px;padding:4px 6px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:11px;" oninput="angleRows[${i}].line=this.value">
+      <input type="number" value="${r.fb}" step="0.01" style="width:90px;padding:4px 6px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:11px;" oninput="angleRows[${i}].fb=parseFloat(this.value)||0">
+      <input type="number" value="${r.bb}" step="0.01" style="width:90px;padding:4px 6px;border:1px solid var(--border2);border-radius:3px;background:var(--bg);font-family:var(--mono);font-size:11px;" oninput="angleRows[${i}].bb=parseFloat(this.value)||0">
+      <button style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;" onclick="angleRows.splice(${i},1);renderAngleRows()">×</button>`;
+    container.appendChild(d);
+  });
+}
+
+function addAngleRow(){ angleRows.push({line:'??',fb:0,bb:180}); renderAngleRows(); }
+
+function calcAngles(){
+  const n=angleRows.length;
+  let html=`<table class="err-table"><thead><tr><th>Station</th><th>BB prev</th><th>FB next</th><th>Interior angle</th></tr></thead><tbody>`;
+  let sum=0;
+  for(let i=0;i<n;i++){
+    const prev=angleRows[(i+n-1)%n];
+    const curr=angleRows[i];
+    let ang=prev.bb-curr.fb;
+    if(ang<0) ang+=360;
+    sum+=ang;
+    html+=`<tr><td>${curr.line.charAt(0)}</td><td>${fmt(prev.bb,2)}°</td><td>${fmt(curr.fb,2)}°</td><td style="font-weight:500;">${fmt(ang,2)}°</td></tr>`;
+  }
+  const expected=(2*n-4)*90;
+  const ok=Math.abs(sum-expected)<0.5;
+  html+=`</tbody><tfoot><tr><td colspan="3" style="text-align:right;font-weight:500;">Sum</td><td style="font-weight:500;">${fmt(sum,2)}°</td></tr>
+    <tr><td colspan="3" style="text-align:right;">Expected (2n−4)×90°</td><td>${expected}°</td></tr>
+    <tr><td colspan="4" style="padding:8px;background:var(--surface2);"><span class="badge ${ok?'b-green':'b-red'}">${ok?'✓ Check passes':'✗ Check fails — re-examine'}</span></td></tr>
+    </tfoot></table>`;
+  document.getElementById('angle-results').innerHTML=html;
+}
+
+// ════════════════════════════════
+// ERRORS TABLE
+// ════════════════════════════════
+const ERRORS=[
+  {type:'Instrumental',err:'Needle not perfectly straight',fix:'Use a well-calibrated compass. Check needle balance before fieldwork.'},
+  {type:'Instrumental',err:'Pivot point bent or blunt',fix:'Service compass regularly. Replace pivot if sluggish movement is noted.'},
+  {type:'Instrumental',err:'Sluggish needle (excessive friction)',fix:'Tap compass gently before reading. Keep needle off pivot when not in use.'},
+  {type:'Instrumental',err:'Improper balancing weight',fix:'Check that compass reads correctly in both hemispheres.'},
+  {type:'Instrumental',err:'Plane of sight not vertical',fix:'Level compass carefully using tripod and bubble.'},
+  {type:'Instrumental',err:'Line of sight not through centre',fix:'Adjust sighting vane alignment. Verify by back-sighting a known line.'},
+  {type:'Personal',err:'Inaccurate levelling of compass box',fix:'Re-level until bubble centred. Repeat if disturbed.'},
+  {type:'Personal',err:'Inaccurate centring over station',fix:'Use plumb bob to centre over peg precisely.'},
+  {type:'Personal',err:'Inaccurate bisection of signal',fix:'Bisect signal carefully; avoid looking across needle.'},
+  {type:'Personal',err:'Parallax error in reading prism',fix:'Look along needle, not across it. Focus prism until reading is sharp.'},
+  {type:'Personal',err:'Carelessness in reading and recording',fix:'Read aloud and verify; record immediately.'},
+  {type:'Personal',err:'Taking reading in wrong direction',fix:'Always check that bearing increases CW from N (WCB convention).'},
+  {type:'Natural',err:'Variation in magnetic declination',fix:'Apply declination correction. Note date and location for correction tables.'},
+  {type:'Natural',err:'Local attraction (iron, reinforcement)',fix:'Check FB−BB = 180°. Move away from magnetic objects; identify affected stations.'},
+  {type:'Natural',err:'Magnetic charges from storms/clouds',fix:'Avoid surveying during electrical storms. Repeat suspect readings.'},
+  {type:'Natural',err:'Irregular variation due to magnetic storms',fix:'Cross-check against known bearings. Re-survey if doubt exists.'},
+];
+
+const PRECAUTIONS=[
+  'Properly set up and level the compass',
+  'Release the needle only when compass is approximately in magnetic meridian',
+  'Stop vibrations by pressing pin so needle comes to rest before reading',
+  'Tap the compass box to overcome friction at pivot',
+  'Avoid holding steel or magnetic articles near compass',
+  'Take duplicate reading at each station for important lines',
+  'Avoid taking readings in wrong direction',
+  'Look along needle (not across it) to avoid parallax error',
+  'Set compass over intermediate point if bearings cannot be read from ends',
+  'Keep needle off pivot when compass is not in use',
+];
+
+function buildErrors(){
+  const tbody=document.getElementById('errors-body');
+  ERRORS.forEach((e,i)=>{
+    const tr=document.createElement('tr');
+    const typeColor=e.type==='Instrumental'?'var(--navy)':e.type==='Natural'?'var(--amber)':'var(--red)';
+    tr.innerHTML=`<td class="err-num">${i+1}</td>
+      <td class="err-type" style="color:${typeColor}">${e.type}</td>
+      <td>${e.err}</td>
+      <td style="color:var(--muted)">${e.fix}</td>`;
+    tbody.appendChild(tr);
+  });
+  const ul=document.getElementById('precautions-list');
+  PRECAUTIONS.forEach(p=>{
+    const li=document.createElement('li');
+    li.style.cssText='cursor:pointer;padding:3px 0;display:flex;align-items:center;gap:8px;';
+    li.innerHTML=`<span class="check-box" style="width:14px;height:14px;border:1.5px solid var(--border2);border-radius:2px;display:inline-block;flex-shrink:0;transition:all .15s;"></span>${p}`;
+    li.onclick=()=>{
+      li.classList.toggle('checked');
+      const cb=li.querySelector('.check-box');
+      if(li.classList.contains('checked')){ cb.style.background='var(--green)'; cb.style.borderColor='var(--green)'; cb.innerHTML='<span style="color:#fff;font-size:10px;line-height:14px;display:block;text-align:center;">✓</span>'; li.style.opacity='0.5'; }
+      else{ cb.style.background=''; cb.style.borderColor=''; cb.innerHTML=''; li.style.opacity='1'; }
+    };
+    ul.appendChild(li);
+  });
+}
+
+// ════════════════════════════════
+// OUTPUT MAP
+// ════════════════════════════════
+let _omSvgString='';
+
+function generateOutputMap(){
+  const pts=[...rows].sort((a,b)=>a.brg-b.brg);
+  if(pts.length<2){ alert('Need at least 2 points.'); return; }
+  const u=currentUnit;
+  const scale=parseFloat(document.getElementById('om-scale').value)||5;
+  const showRays=document.getElementById('om-rays').value==='yes';
+  const showLabels=document.getElementById('om-labels').value==='yes';
+  const showGrid=document.getElementById('om-grid').value==='yes';
+  const title=document.getElementById('om-title').value||'Radiation Survey';
+  const surveyor=document.getElementById('om-surveyor').value||'';
+  const date=document.getElementById('om-date').value||'';
+  const dept=document.getElementById('om-dept').value||'';
+
+  const toXY=(brg,dist)=>({x:dist*Math.sin(brg*Math.PI/180), y:-dist*Math.cos(brg*Math.PI/180)});
+  const cartPts=pts.map(p=>({...p,...toXY(p.brg,p.dist)}));
+
+  const allX=[0,...cartPts.map(p=>p.x)];
+  const allY=[0,...cartPts.map(p=>p.y)];
+  const xMin=Math.min(...allX), xMax=Math.max(...allX);
+  const yMin=Math.min(...allY), yMax=Math.max(...allY);
+
+  const padL=90, padR=110, padT=118, padB=175;
+  const drawW=(xMax-xMin)*scale+80;
+  const drawH=(yMax-yMin)*scale+80;
+  const W=drawW+padL+padR;
+  const H=drawH+padT+padB;
+
+  const xOff=padL+40-xMin*scale;
+  const yOff=padT+40-yMin*scale;
+  function mx(x){ return xOff+x*scale; }
+  function my(y){ return yOff+y*scale; }
+
+  let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="background:#faf8f3;font-family:'DM Mono',Courier,monospace;">`;
+  svg+=`<defs>
+    <pattern id="smallgrid" width="${scale*5}" height="${scale*5}" patternUnits="userSpaceOnUse">
+      <path d="M ${scale*5} 0 L 0 0 0 ${scale*5}" fill="none" stroke="#e0ddd5" stroke-width="0.4"/>
+    </pattern>
+    <pattern id="grid" width="${scale*20}" height="${scale*20}" patternUnits="userSpaceOnUse">
+      <rect width="${scale*20}" height="${scale*20}" fill="url(#smallgrid)"/>
+      <path d="M ${scale*20} 0 L 0 0 0 ${scale*20}" fill="none" stroke="#d5d1c8" stroke-width="0.8"/>
+    </pattern>
+    <marker id="arrn" markerWidth="7" markerHeight="7" refX="3.5" refY="7" orient="auto">
+      <path d="M3.5,0 L7,7 L3.5,4.5 L0,7 Z" fill="#1c1a16"/>
+    </marker>
+  </defs>`;
+
+  // Border
+  svg+=`<rect x="1" y="1" width="${W-2}" height="${H-2}" rx="3" fill="none" stroke="#bbb8b0" stroke-width="1.5"/>`;
+  svg+=`<rect x="6" y="6" width="${W-12}" height="${H-12}" rx="2" fill="none" stroke="#d5d1c8" stroke-width="0.5"/>`;
+
+  // Title block
+  svg+=`<rect x="6" y="6" width="${W-12}" height="98" rx="2" fill="#1c1a16"/>`;
+  svg+=`<text x="${W/2}" y="40" text-anchor="middle" fill="#f7f4ee" font-size="18" font-weight="600" style="font-family:'Fraunces',Georgia,serif;">${escSvg(title)}</text>`;
+  svg+=`<text x="${W/2}" y="60" text-anchor="middle" fill="#9a9488" font-size="10" letter-spacing="0.08em">PRISMATIC COMPASS — RADIATION METHOD</text>`;
+  svg+=`<text x="${W/2}" y="76" text-anchor="middle" fill="#7a7468" font-size="9">${escSvg(dept)}</text>`;
+  svg+=`<text x="20" y="92" fill="#a8c4ae" font-size="9">Surveyor: ${escSvg(surveyor)}</text>`;
+  svg+=`<text x="${W/2}" y="92" text-anchor="middle" fill="#a8c4ae" font-size="9">Date: ${escSvg(date)}</text>`;
+  svg+=`<text x="${W-20}" y="92" text-anchor="end" fill="#a8c4ae" font-size="9">Unit: ${u} · WCB bearings</text>`;
+
+  // Drawing area background
+  svg+=`<rect x="${padL-10}" y="${padT-10}" width="${drawW+20}" height="${drawH+20}" fill="#fdfcf9" stroke="#e8e4dc" stroke-width="0.7"/>`;
+
+  // Grid
+  if(showGrid) svg+=`<rect x="${padL-10}" y="${padT-10}" width="${drawW+20}" height="${drawH+20}" fill="url(#grid)" opacity="0.7"/>`;
+
+  // Polygon fill
+  const polyStr=cartPts.map(p=>`${mx(p.x)},${my(p.y)}`).join(' ');
+  svg+=`<polygon points="${polyStr}" fill="rgba(26,58,92,0.07)" stroke="none"/>`;
+
+  // North line through O
+  svg+=`<line x1="${mx(0)}" y1="${my(yMin-5)}" x2="${mx(0)}" y2="${padT-10}" stroke="#d5c4a8" stroke-width="1" stroke-dasharray="6,4"/>`;
+  svg+=`<text x="${mx(0)+4}" y="${padT-14}" fill="#b0a088" font-size="8">N</text>`;
+
+  // Ray lines
+  if(showRays){
+    cartPts.forEach(p=>{
+      svg+=`<line x1="${mx(0)}" y1="${my(0)}" x2="${mx(p.x)}" y2="${my(p.y)}" stroke="#1a3a5c" stroke-width="0.9" stroke-dasharray="5,3" opacity="0.6"/>`;
+    });
+  }
+
+  // Boundary polygon
+  if(cartPts.length>=2){
+    svg+=`<polyline points="${polyStr} ${mx(cartPts[0].x)},${my(cartPts[0].y)}" fill="none" stroke="#2d5a3d" stroke-width="2" stroke-linejoin="round"/>`;
+  }
+
+  // Object dots + labels
+  cartPts.forEach(p=>{
+    svg+=`<circle cx="${mx(p.x)}" cy="${my(p.y)}" r="4" fill="#b5860d"/>`;
+    if(showLabels){
+      const lx=mx(p.x)+(p.x>=0?7:-7);
+      const anchor=p.x>=0?'start':'end';
+      svg+=`<text x="${lx}" y="${my(p.y)-5}" text-anchor="${anchor}" fill="#1a1814" font-size="9" font-weight="500">${escSvg(p.pt)}</text>`;
+      svg+=`<text x="${lx}" y="${my(p.y)+7}" text-anchor="${anchor}" fill="#7a7468" font-size="7.5">${p.brg}° / ${p.dist}${u}</text>`;
+    }
+  });
+
+  // Base station O
+  svg+=`<circle cx="${mx(0)}" cy="${my(0)}" r="7" fill="#1c1a16"/>`;
+  svg+=`<text x="${mx(0)}" y="${my(0)+3.5}" text-anchor="middle" fill="#f7f4ee" font-size="9" font-weight="bold">O</text>`;
+
+  // North arrow
+  const nax=padL+drawW+65, nay=padT+24;
+  svg+=`<line x1="${nax}" y1="${nay+32}" x2="${nax}" y2="${nay}" stroke="#1c1a16" stroke-width="1.5" marker-end="url(#arrn)"/>`;
+  svg+=`<text x="${nax}" y="${nay+48}" text-anchor="middle" fill="#1c1a16" font-size="12" font-weight="bold">N</text>`;
+
+  // Scale bar
+  const sbU=Math.pow(10,Math.floor(Math.log10(Math.max(xMax-xMin,yMax-yMin)/4)));
+  const sbLen=sbU*scale;
+  const sbX=padL+drawW-sbLen-10, sbY=padT+drawH+40;
+  svg+=`<line x1="${sbX}" y1="${sbY}" x2="${sbX+sbLen}" y2="${sbY}" stroke="#1c1a16" stroke-width="2"/>`;
+  svg+=`<line x1="${sbX}" y1="${sbY-4}" x2="${sbX}" y2="${sbY+4}" stroke="#1c1a16" stroke-width="1.5"/>`;
+  svg+=`<line x1="${sbX+sbLen}" y1="${sbY-4}" x2="${sbX+sbLen}" y2="${sbY+4}" stroke="#1c1a16" stroke-width="1.5"/>`;
+  svg+=`<text x="${sbX+sbLen/2}" y="${sbY-7}" text-anchor="middle" fill="#1c1a16" font-size="8">${sbU} ${u}</text>`;
+
+  // Legend
+  const legX=padL, legY=padT+drawH+58;
+  svg+=`<rect x="${legX}" y="${legY-14}" width="310" height="54" rx="2" fill="#f0ece1" stroke="#d5d1c8" stroke-width="0.7"/>`;
+  svg+=`<text x="${legX+8}" y="${legY-2}" fill="#1c1a16" font-size="8.5" font-weight="500" letter-spacing="0.04em">LEGEND</text>`;
+  svg+=`<circle cx="${legX+14}" cy="${legY+12}" r="4" fill="#b5860d"/>`;
+  svg+=`<text x="${legX+22}" y="${legY+15}" fill="#b5860d" font-size="8">Object point (ray tip)</text>`;
+  svg+=`<circle cx="${legX+14}" cy="${legY+26}" r="6" fill="#1c1a16"/>`;
+  svg+=`<text x="${legX+22}" y="${legY+29}" fill="#1c1a16" font-size="8">Base station O</text>`;
+  svg+=`<line x1="${legX+140}" y1="${legY+12}" x2="${legX+160}" y2="${legY+12}" stroke="#2d5a3d" stroke-width="2"/>`;
+  svg+=`<text x="${legX+164}" y="${legY+15}" fill="#2d5a3d" font-size="8">Boundary polygon</text>`;
+  if(showRays){
+    svg+=`<line x1="${legX+140}" y1="${legY+26}" x2="${legX+160}" y2="${legY+26}" stroke="#1a3a5c" stroke-width="1" stroke-dasharray="4,2"/>`;
+    svg+=`<text x="${legX+164}" y="${legY+29}" fill="#1a3a5c" font-size="8">Ray lines (bearing+dist)</text>`;
+  }
+
+  // Summary box
+  const area=computeArea(pts);
+  const boxX=W-padR-60, boxY=padT+drawH+46;
+  svg+=`<rect x="${boxX-4}" y="${boxY-14}" width="142" height="70" rx="2" fill="#1c1a16"/>`;
+  svg+=`<text x="${boxX+67}" y="${boxY-2}" text-anchor="middle" fill="#a8c4ae" font-size="8" letter-spacing="0.06em">SURVEY SUMMARY</text>`;
+  svg+=`<text x="${boxX}" y="${boxY+12}" fill="#f7f4ee" font-size="8">Area: ${fmt(area,1)} ${u}²</text>`;
+  svg+=`<text x="${boxX}" y="${boxY+24}" fill="#f7f4ee" font-size="8">Points: ${pts.length}</text>`;
+  svg+=`<text x="${boxX}" y="${boxY+36}" fill="#f7f4ee" font-size="8">Method: Radiation</text>`;
+  svg+=`<text x="${boxX}" y="${boxY+48}" fill="#f7f4ee" font-size="8">Instrument: Prismatic Compass</text>`;
+
+  svg+=`</svg>`;
+  _omSvgString=svg;
+
+  document.getElementById('om-svg-container').innerHTML=svg;
+  document.getElementById('om-preview-card').style.display='block';
+  document.getElementById('om-dl-svg').style.display='inline-block';
+  document.getElementById('om-dl-png').style.display='inline-block';
+  document.getElementById('om-preview-meta').textContent=`${W}×${H}px · ${pts.length} points · Area ≈ ${fmt(area,1)} ${u}²`;
+
+  // Summary table
+  let html=`<table class="err-table"><thead><tr><th>Point</th><th>Bearing WCB (°)</th><th>Distance (${u})</th><th>x (${u})</th><th>y (${u})</th><th>Note</th></tr></thead><tbody>`;
+  const cartPts2=pts.map(p=>({...p,...{x:p.dist*Math.sin(p.brg*Math.PI/180),y:-p.dist*Math.cos(p.brg*Math.PI/180)}}));
+  cartPts2.forEach(p=>{
+    html+=`<tr><td style="font-weight:500">${escHtml(p.pt)}</td><td>${p.brg}°</td><td>${p.dist}</td><td>${fmt(p.x,3)}</td><td>${fmt(p.y,3)}</td><td style="font-size:10px;color:var(--muted)">${escHtml(p.note||'')}</td></tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td colspan="6" style="padding:10px;background:var(--surface2);font-size:11px;"><strong>Area:</strong> ${fmt(area,2)} ${u}² &nbsp;·&nbsp; <strong>Points:</strong> ${pts.length} &nbsp;·&nbsp; <strong>Method:</strong> Radiation (all rays from O)</td></tr></tfoot></table>`;
+  document.getElementById('om-summary-content').innerHTML=html;
+  document.getElementById('om-summary-card').style.display='block';
+}
+
+function downloadSVG(){
+  if(!_omSvgString) return;
+  const t=document.getElementById('om-title').value.replace(/[^a-zA-Z0-9_-]/g,'_')||'radiation_survey';
+  const blob=new Blob([_omSvgString],{type:'image/svg+xml'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=t+'_map.svg'; a.click();
+}
+
+function downloadPNG(){
+  if(!_omSvgString) return;
+  const t=document.getElementById('om-title').value.replace(/[^a-zA-Z0-9_-]/g,'_')||'radiation_survey';
+  const svgEl=document.getElementById('om-svg-container').querySelector('svg');
+  if(!svgEl) return;
+  const W=parseFloat(svgEl.getAttribute('width')), H=parseFloat(svgEl.getAttribute('height'));
+  const canvas=document.createElement('canvas'); const sc=2;
+  canvas.width=W*sc; canvas.height=H*sc;
+  const ctx=canvas.getContext('2d'); ctx.scale(sc,sc);
+  const blob=new Blob([_omSvgString],{type:'image/svg+xml;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const img=new Image();
+  img.onload=()=>{ ctx.drawImage(img,0,0,W,H); URL.revokeObjectURL(url); const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download=t+'_map.png'; a.click(); };
+  img.onerror=()=>{ alert('Try downloading as SVG instead.'); URL.revokeObjectURL(url); };
+  img.src=url;
+}
+
+// ════════════════════════════════
+// HELPERS
+// ════════════════════════════════
+function fmt(v,d=2){ return (isNaN(v)||!isFinite(v))?'—':parseFloat(v.toFixed(d)).toLocaleString('en-IN',{maximumFractionDigits:d}); }
+function rcard(label,val,unit,badge,bc){ return `<div class="res-card"><div class="res-label">${label}</div><div class="res-val">${val}<span class="res-unit">${unit||''}</span>${badge?`<span class="badge ${bc||''}">${badge}</span>`:''}</div></div>`; }
+function escSvg(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toggleColl(id){ document.getElementById('coll-'+id).classList.toggle('open'); }
+
+// ════════════════════════════════
+// PARTICLES
+// ════════════════════════════════
+(function(){
+  const hdr=document.getElementById('particles-hdr');
+  hdr.style.cssText='position:absolute;inset:0;overflow:hidden;pointer-events:none;';
+  const cols=['#a8c4ae','#c4a85a','#7a9ab5','#d4b88a','#8ab5c4'];
+  for(let i=0;i<18;i++){
+    const p=document.createElement('div');
+    const s=Math.random()*30+10;
+    p.style.cssText=`position:absolute;border-radius:50%;opacity:0.07;width:${s}px;height:${s}px;background:${cols[i%cols.length]};left:${Math.random()*100}%;top:${Math.random()*100}%;animation:float${i%3} ${3+Math.random()*4}s ease-in-out infinite ${Math.random()*2}s;`;
+    hdr.appendChild(p);
+  }
+  const style=document.createElement('style');
+  style.textContent='@keyframes float0{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}@keyframes float1{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-8px) translateX(8px)}}@keyframes float2{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-15px) scale(1.1)}}';
+  document.head.appendChild(style);
+})();
+
+// Progress bar
+window.addEventListener('scroll',()=>{
+  const p=document.getElementById('prog');
+  const s=document.documentElement.scrollTop, h=document.documentElement.scrollHeight-window.innerHeight;
+  p.style.width=(h>0?s/h*100:0)+'%';
+});
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+loadBHU();
+buildErrors();
+renderAngleRows();
+calcFBBB(); calcWCBQB(); calcLA();
+setTimeout(()=>{ drawPlot(); calcAreaResults(); }, 200);
+window.addEventListener('resize',()=>{ drawPlot(); });
+</script>
+</body>
+</html>
